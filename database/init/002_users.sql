@@ -27,4 +27,4 @@ VALUES (
     TRUE,
     TRUE
 )
-ON CONFLICT (email) DO NOTHING;
+ON CONFLICT (email) DO NOTHING; 
