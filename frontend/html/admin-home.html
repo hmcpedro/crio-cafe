@@ -1,0 +1,119 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Aromap - Admin</title>
+  <link rel="stylesheet" href="/static/css/admin-home.css" />
+</head>
+<body>
+  <div class="page-shell">
+    <div class="page-paper">
+      <header class="topbar">
+        <div class="brand-wrap">
+          <img src="/static/img/logo-aromap.png" alt="Aromap" class="brand-logo" />
+        </div>
+
+        <nav class="topnav">
+          <a href="#" class="active">Home</a>
+          <a href="#">Campanhas</a>
+          <a href="#">Relatórios</a>
+          <a href="#">Sair</a>
+        </nav>
+      </header>
+
+      <main class="admin-content">
+        <section class="campaign-panel">
+          <div class="campaign-header">
+            <h1>Últimas campanhas</h1>
+            <p>Campanhas promocionais ativas e agendadas</p>
+            <div class="campaign-divider"></div>
+          </div>
+
+          <div class="campaign-grid">
+            <article class="campaign-card featured-card">
+                <div class="featured-image-wrap">
+                    <img
+                        src="/static/img/campaign_001.png"
+                        alt="Vale da tarde"
+                        class="featured-image"
+                    />
+                </div>
+
+              <div class="featured-footer">
+                De 20 à 25 de maio
+              </div>
+            </article>
+
+            <article class="campaign-card placeholder-card">
+              <div class="placeholder-inner">
+                <div class="calendar-icon">🗓</div>
+                <h3>Em breve</h3>
+                <div class="placeholder-line"></div>
+                <p>Nova campanha</p>
+                <a href="#" class="placeholder-button">Criar Campanha</a>
+              </div>
+            </article>
+
+            <article class="campaign-card placeholder-card">
+              <div class="placeholder-inner">
+                <div class="calendar-icon">🗓</div>
+                <h3>Em breve</h3>
+                <div class="placeholder-line"></div>
+                <p>Nova campanha</p>
+                <a href="#" class="placeholder-button">Criar Campanha</a>
+              </div>
+            </article>
+          </div>
+        </section>
+
+        <section class="admin-summary">
+          <div class="summary-block summary-list">
+            <div class="summary-title-row">
+              <h3>Campanhas ativas</h3>
+              <div class="summary-line"></div>
+            </div>
+
+            <ul>
+              <li>Café da Tarde</li>
+              <li>Combo Espresso</li>
+              <li>Pão de Queijo</li>
+            </ul>
+          </div>
+
+          <div class="summary-vertical-line"></div>
+
+          <div class="summary-block summary-metrics">
+            <div class="summary-title-row">
+              <h3>Visão Geral</h3>
+              <div class="summary-line"></div>
+            </div>
+
+            <div class="metric-grid">
+              <div class="metric-card">
+                <strong>4</strong>
+                <span>Campanhas Ativas</span>
+              </div>
+
+              <div class="metric-card">
+                <strong>12</strong>
+                <span>Campanhas Criadas</span>
+              </div>
+
+              <div class="metric-card">
+                <strong>128</strong>
+                <span>Notificações Enviadas</span>
+              </div>
+            </div>
+          </div>
+        </section>
+      </main>
+
+      <footer class="page-footer">
+        <div class="footer-line"></div>
+        <img src="/static/img/logo-aromap.png" alt="Aromap" class="footer-logo" />
+      </footer>
+    </div>
+  </div>
+</body>
+</html>

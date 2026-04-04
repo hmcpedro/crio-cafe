@@ -38,6 +38,9 @@ def cadastro_page():
 def home_page():
     return FileResponse(PAGES_DIR / "home.html")
 
+@app.get("/admin", include_in_schema=False)
+def admin_page():
+    return FileResponse(PAGES_DIR / "admin-home.html")  
 
 @app.get("/health")
 def health():
