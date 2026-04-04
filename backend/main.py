@@ -34,6 +34,10 @@ def login_page():
 def cadastro_page():
     return FileResponse(PAGES_DIR / "cadastro.html")
 
+@app.get("/home", include_in_schema=False)
+def home_page():
+    return FileResponse(PAGES_DIR / "home.html")
+
 
 @app.get("/health")
 def health():
