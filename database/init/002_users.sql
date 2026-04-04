@@ -9,6 +9,8 @@ CREATE TABLE IF NOT EXISTS users (
     created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP
 );
 
+CREATE EXTENSION IF NOT EXISTS pgcrypto;
+
 INSERT INTO users (
     name,
     email,
@@ -19,9 +21,9 @@ INSERT INTO users (
 )
 VALUES (
     'Administrador',
-    'admin@criocafe.com',
+    'admin@admin.com',
     '11999999999',
-    crypt('admin123', gen_salt('bf')),
+    crypt('admin', gen_salt('bf')),
     TRUE,
     TRUE
 )

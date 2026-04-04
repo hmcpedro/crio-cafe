@@ -3,7 +3,6 @@ const message = document.getElementById("message");
 
 loginForm.addEventListener("submit", async (event) => {
   event.preventDefault();
-
   message.textContent = "";
 
   const payload = {
@@ -11,24 +10,29 @@ loginForm.addEventListener("submit", async (event) => {
     password: document.getElementById("password").value,
   };
 
-  const response = await fetch("/auth/login", {
-    method: "POST",
-    headers: {
-      "Content-Type": "application/json",
-    },
-    body: JSON.stringify(payload),
-  });
+  try {
+    const response = await fetch("/auth/login", {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify(payload),
+    });
 
-  const data = await response.json();
+    const data = await response.json();
 
-  if (!response.ok) {
-    message.textContent = data.detail || "Erro ao fazer login.";
-    return;
-  }
+    if (!response.ok) {
+      message.textContent = data.detail || "Erro ao fazer login.";
+      return;
+    }
 
-  if (data.is_admin) {
-    message.textContent = "Login realizado como administrador.";
-  } else {
-    message.textContent = "Login realizado com sucesso.";
+    if (data.is_admin) {
+      window.location.href = "/admin";
+    } else {
+      window.location.href = "/home";
+    }
+  } catch (error) {
+    console.error(error);
+    message.textContent = "Erro de conexão com o servidor.";
   }
 });
