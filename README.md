@@ -18,3 +18,14 @@ O projeto **nao inclui** funcionalidades de vendas, controle de estoque, deliver
 
 ## Proposta de valor
 Com essa solucao, a Crio Cafe pode tornar suas acoes promocionais mais inteligentes, direcionadas e mensuraveis, melhorando a experiencia do cliente e o aproveitamento do fluxo nas lojas.
+
+## Instruções de Uso
+- Certifique-se de que todas as bibliotecas em requirements.txt estejam instaladas
+- Suba o conteiner
+```bash
+docker compose up -d
+```
+- Inicialize o serviço
+```bash
+uvicorn main:app --reload
+``
