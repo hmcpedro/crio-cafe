@@ -1,0 +1,31 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Login - Crio Café</title>
+  <link rel="stylesheet" href="/static/css/style.css">
+</head>
+<body>
+  <main class="auth-container">
+    <section class="auth-card">
+      <h1>Login</h1>
+
+      <form id="loginForm">
+        <label for="email">E-mail</label>
+        <input type="email" id="email" required>
+
+        <label for="password">Senha</label>
+        <input type="password" id="password" required>
+
+        <button type="submit">Entrar</button>
+      </form>
+
+      <p class="message" id="message"></p>
+      <p class="message">Não tem conta? <a href="/cadastro">Cadastre-se</a></p>
+    </section>
+  </main>
+
+  <script src="/static/js/login.js"></script>
+</body>
+</html>

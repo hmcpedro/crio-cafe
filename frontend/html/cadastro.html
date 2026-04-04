@@ -1,0 +1,40 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Cadastro - Crio Café</title>
+  <link rel="stylesheet" href="/static/css/style.css">
+</head>
+<body>
+  <main class="auth-container">
+    <section class="auth-card">
+      <h1>Cadastro</h1>
+
+      <form id="registerForm">
+        <label for="name">Nome</label>
+        <input type="text" id="name" required>
+
+        <label for="email">E-mail</label>
+        <input type="email" id="email" required>
+
+        <label for="phone">Telefone</label>
+        <input type="text" id="phone" required>
+
+        <label for="password">Senha</label>
+        <input type="password" id="password" required>
+
+        <label for="confirmPassword">Confirmar senha</label>
+        <input type="password" id="confirmPassword" required>
+
+        <button type="submit">Cadastrar</button>
+      </form>
+
+      <p class="message" id="message"></p>
+      <p class="message">Já tem conta? <a href="/login">Entrar</a></p>
+    </section>
+  </main>
+
+  <script src="/static/js/cadastro.js"></script>
+</body>
+</html>
