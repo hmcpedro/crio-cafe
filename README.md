@@ -29,3 +29,4 @@ docker compose up -d
 ```bash
 uvicorn main:app --reload
 ``
+- Aesse: http://127.0.0.1:8000/login
