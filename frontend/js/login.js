@@ -26,6 +26,10 @@ loginForm.addEventListener("submit", async (event) => {
       return;
     }
 
+    // Persiste o token e o nome para uso nas outras páginas
+    localStorage.setItem("aromap_token", data.token);
+    localStorage.setItem("aromap_name",  data.name);
+
     if (data.is_admin) {
       window.location.href = "/admin";
     } else {

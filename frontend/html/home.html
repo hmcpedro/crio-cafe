@@ -15,9 +15,9 @@
         </div>
 
         <nav class="topnav">
-          <a href="#" class="active">Início</a>
-          <a href="#">Ofertas</a>
-          <a href="#">Meu perfil</a>
+          <a href="/home" class="active">Início</a>
+          <a href="/ofertas">Ofertas</a>
+          <a href="/perfil">Meu perfil</a>
 
           <button class="notif-btn" aria-label="Notificações">
             <span class="notif-icon">🔔</span>
@@ -28,6 +28,7 @@
 
       <main class="content">
         <section class="hero-copy">
+          <p class="welcome-greeting">Olá, <span id="userName">...</span></p>
           <h1>Descubra ofertas perto de você</h1>
           <p>Promoções ativas para a sua rotina, no momento certo.</p>
         </section>
@@ -126,9 +127,10 @@
       <footer class="page-footer">
         <div class="footer-line"></div>
         <img src="/static/img/logo-aromap.png" alt="Aromap" class="footer-logo" />
-        <a href="#" class="preferences-link">Editar preferências</a>
+        <a href="/perfil" class="preferences-link">Editar preferências</a>
       </footer>
     </div>
   </div>
+  <script src="/static/js/home.js"></script>
 </body>
 </html>

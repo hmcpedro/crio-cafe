@@ -14,6 +14,31 @@ services:
     volumes:
       - postgres_data:/var/lib/postgresql/data
       - ./database/init:/docker-entrypoint-initdb.d
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER} -d ${POSTGRES_DB}"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+
+  backend:
+    build: .
+    container_name: aromap-backend
+    restart: unless-stopped
+    env_file:
+      - .env
+    environment:
+      POSTGRES_HOST: postgres
+    ports:
+      - "8000:8000"
+    volumes:
+      - ./backend:/app/backend      # hot-reload: mudanças no host refletem sem rebuild
+      - ./frontend:/app/frontend    # hot-reload: HTML/CSS/JS sempre atualizados
+      - uploads_data:/app/backend/uploads
+    command: uvicorn main:app --host 0.0.0.0 --port 8000 --reload
+    depends_on:
+      postgres:
+        condition: service_healthy
 
 volumes:
   postgres_data:
+  uploads_data:

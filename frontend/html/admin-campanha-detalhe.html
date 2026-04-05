@@ -1,0 +1,153 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Aromap - Detalhe da Campanha</title>
+  <link rel="stylesheet" href="/static/css/admin-campanha-detalhe.css" />
+</head>
+<body>
+  <div class="page-shell">
+    <div class="page-paper">
+
+      <header class="topbar">
+        <div class="brand-wrap">
+          <img src="/static/img/logo-aromap.png" alt="Aromap" class="brand-logo" />
+        </div>
+        <nav class="topnav">
+          <a href="/admin">Home</a>
+          <a href="/admin/campanhas" class="active">Campanhas</a>
+          <a href="/admin/relatorios">Relatórios</a>
+          <a href="/login">Sair</a>
+        </nav>
+      </header>
+
+      <main class="admin-main">
+
+        <!-- Breadcrumb + ações -->
+        <div class="toolbar">
+          <a href="/admin/campanhas" class="breadcrumb-back">← Campanhas</a>
+          <div class="toolbar-actions">
+            <button id="btnEncerrar" class="btn-danger">Encerrar campanha</button>
+          </div>
+        </div>
+
+        <!-- Hero da campanha -->
+        <section class="hero-section">
+          <div class="hero-image-wrap">
+            <img id="heroImage" src="/static/img/logo-aromap.png" alt="" class="hero-image" />
+            <div class="hero-overlay">
+              <div class="hero-overlay-top">
+                <span class="hero-badge" id="heroBadge"></span>
+                <h1 id="heroTitle">Carregando...</h1>
+                <p class="hero-subtitle" id="heroSubtitle"></p>
+              </div>
+              <img src="/static/img/logo-aromap.png" alt="Aromap" class="hero-mini-logo" />
+            </div>
+          </div>
+        </section>
+
+        <!-- Informações e métricas -->
+        <div class="detail-grid">
+
+          <!-- Detalhes da campanha -->
+          <section class="detail-card">
+            <div class="section-title-row">
+              <h2>Informações</h2>
+              <div class="section-line"></div>
+            </div>
+
+            <dl class="info-list">
+              <div class="info-row">
+                <dt>Descrição</dt>
+                <dd id="infoDescricao">—</dd>
+              </div>
+              <div class="info-row">
+                <dt>Período</dt>
+                <dd id="infoPeriodo">—</dd>
+              </div>
+              <div class="info-row">
+                <dt>Horário válido</dt>
+                <dd id="infoHorario">—</dd>
+              </div>
+              <div class="info-row">
+                <dt>Unidades</dt>
+                <dd id="infoUnidades">—</dd>
+              </div>
+              <div class="info-row">
+                <dt>Tipo de benefício</dt>
+                <dd id="infoBeneficio">—</dd>
+              </div>
+              <div class="info-row">
+                <dt>Produto alvo</dt>
+                <dd id="infoProduto">—</dd>
+              </div>
+              <div class="info-row">
+                <dt>Notificação</dt>
+                <dd id="infoNotificacao">—</dd>
+              </div>
+            </dl>
+          </section>
+
+          <!-- Métricas de desempenho (estáticas por enquanto) -->
+          <section class="detail-card">
+            <div class="section-title-row">
+              <h2>Desempenho</h2>
+              <div class="section-line"></div>
+            </div>
+
+            <div class="perf-metrics">
+              <div class="perf-tile">
+                <strong>—</strong>
+                <span>Notificações enviadas</span>
+              </div>
+              <div class="perf-tile">
+                <strong>—</strong>
+                <span>Resgates realizados</span>
+              </div>
+              <div class="perf-tile perf-tile--accent">
+                <strong>—</strong>
+                <span>Taxa de resgate</span>
+              </div>
+              <div class="perf-tile">
+                <strong>—</strong>
+                <span>Clientes elegíveis</span>
+              </div>
+            </div>
+
+            <div class="perf-bar-section">
+              <div class="perf-bar-label">
+                <span>Taxa de conversão</span>
+                <span>—</span>
+              </div>
+              <div class="perf-bar-track">
+                <div class="perf-bar-fill" style="width: 0%"></div>
+              </div>
+            </div>
+
+            <div class="section-title-row" style="margin-top:32px">
+              <h2>Histórico de resgates</h2>
+              <div class="section-line"></div>
+            </div>
+
+            <ul class="redemption-list" id="redemptionList">
+              <li class="redemption-item redemption-item--more">
+                <span>Nenhum resgate registrado ainda.</span>
+              </li>
+            </ul>
+          </section>
+
+        </div>
+
+      </main>
+
+      <footer class="page-footer">
+        <div class="footer-line"></div>
+        <img src="/static/img/logo-aromap.png" alt="Aromap" class="footer-logo" />
+      </footer>
+    </div>
+  </div>
+
+  <script src="/static/js/admin-campanha-detalhe.js"></script>
+</body>
+</html>

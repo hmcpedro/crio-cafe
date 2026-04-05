@@ -15,54 +15,83 @@
         </div>
 
         <nav class="topnav">
-          <a href="#" class="active">Home</a>
-          <a href="#">Campanhas</a>
-          <a href="#">Relatórios</a>
-          <a href="#">Sair</a>
+          <a href="/admin" class="active">Home</a>
+          <a href="/admin/campanhas">Campanhas</a>
+          <a href="/admin/relatorios">Relatórios</a>
+          <a href="/login">Sair</a>
         </nav>
       </header>
 
       <main class="admin-content">
         <section class="campaign-panel">
           <div class="campaign-header">
-            <h1>Últimas campanhas</h1>
-            <p>Campanhas promocionais ativas e agendadas</p>
-            <div class="campaign-divider"></div>
+            <div class="campaign-header-left">
+              <h1>Últimas campanhas</h1>
+              <p>Campanhas promocionais ativas e agendadas</p>
+            </div>
+            <a href="/admin/nova-campanha" class="new-campaign-btn">+ Nova Campanha</a>
           </div>
+          <div class="campaign-divider"></div>
 
           <div class="campaign-grid">
-            <article class="campaign-card featured-card">
-                <div class="featured-image-wrap">
-                    <img
-                        src="/static/img/campaign_001.png"
-                        alt="Vale da tarde"
-                        class="featured-image"
-                    />
+            <article class="campaign-card">
+              <div class="card-image-wrap">
+                <img
+                  src="/static/img/campaign_006.png"
+                  alt="Vale da tarde"
+                  class="card-image"
+                />
+                <div class="card-overlay">
+                  <div class="card-overlay-top">
+                    <h2>Vale da tarde</h2>
+                    <p class="card-dates">20 a 25 de maio</p>
+                    <p class="card-status">Ativa</p>
+                  </div>
+                  <a href="/admin/campanha-detalhe" class="card-details-btn">Ver Detalhes</a>
+                  <img src="/static/img/logo-aromap.png" alt="Aromap" class="card-mini-logo" />
                 </div>
-
-              <div class="featured-footer">
-                De 20 à 25 de maio
               </div>
+              <div class="card-footer">De 20 à 25 de maio</div>
             </article>
 
-            <article class="campaign-card placeholder-card">
-              <div class="placeholder-inner">
-                <div class="calendar-icon">🗓</div>
-                <h3>Em breve</h3>
-                <div class="placeholder-line"></div>
-                <p>Nova campanha</p>
-                <a href="#" class="placeholder-button">Criar Campanha</a>
+            <article class="campaign-card">
+              <div class="card-image-wrap">
+                <img
+                  src="/static/img/campaign_002.png"
+                  alt="Combo Espresso"
+                  class="card-image"
+                />
+                <div class="card-overlay">
+                  <div class="card-overlay-top">
+                    <h2>Combo Espresso</h2>
+                    <p class="card-dates">10 a 15 de maio</p>
+                    <p class="card-status">Ativa</p>
+                  </div>
+                  <a href="/admin/campanha-detalhe" class="card-details-btn">Ver Detalhes</a>
+                  <img src="/static/img/logo-aromap.png" alt="Aromap" class="card-mini-logo" />
+                </div>
               </div>
+              <div class="card-footer">De 10 à 15 de maio</div>
             </article>
 
-            <article class="campaign-card placeholder-card">
-              <div class="placeholder-inner">
-                <div class="calendar-icon">🗓</div>
-                <h3>Em breve</h3>
-                <div class="placeholder-line"></div>
-                <p>Nova campanha</p>
-                <a href="#" class="placeholder-button">Criar Campanha</a>
+            <article class="campaign-card">
+              <div class="card-image-wrap">
+                <img
+                  src="/static/img/campaign_003.png"
+                  alt="Pão de Queijo"
+                  class="card-image"
+                />
+                <div class="card-overlay">
+                  <div class="card-overlay-top">
+                    <h2>Pão de Queijo</h2>
+                    <p class="card-dates">5 a 10 de maio</p>
+                    <p class="card-status card-status--ended">Encerrada</p>
+                  </div>
+                  <a href="/admin/campanha-detalhe" class="card-details-btn">Ver Detalhes</a>
+                  <img src="/static/img/logo-aromap.png" alt="Aromap" class="card-mini-logo" />
+                </div>
               </div>
+              <div class="card-footer">De 5 à 10 de maio</div>
             </article>
           </div>
         </section>

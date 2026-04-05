@@ -1,0 +1,343 @@
+/* =========================================
+   perfil.css
+   Complementa home.css para a tela de perfil
+   ========================================= */
+
+/* Cabeçalho do perfil */
+.profile-header {
+  display: flex;
+  align-items: center;
+  gap: 28px;
+  margin-bottom: 28px;
+}
+
+.profile-avatar {
+  width: 88px;
+  height: 88px;
+  border-radius: 999px;
+  background: linear-gradient(135deg, var(--accent), var(--accent-dark));
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  box-shadow: 0 6px 18px rgba(90, 45, 15, 0.22);
+}
+
+.avatar-initials {
+  font-size: 32px;
+  font-weight: 500;
+  color: #fff2e9;
+  letter-spacing: 0.04em;
+  font-family: Georgia, serif;
+}
+
+.profile-info h1 {
+  margin: 0 0 6px;
+  font-size: clamp(32px, 4vw, 54px);
+  font-weight: 500;
+  line-height: 1;
+  color: var(--ink);
+}
+
+.profile-email {
+  margin: 0 0 4px;
+  font-size: 18px;
+  color: var(--ink-soft);
+}
+
+.profile-since {
+  margin: 0;
+  font-size: 15px;
+  color: var(--ink-soft);
+  opacity: 0.65;
+  font-family: Arial, Helvetica, sans-serif;
+}
+
+.profile-divider {
+  height: 1px;
+  background: var(--line);
+  margin-bottom: 36px;
+}
+
+/* Layout de duas colunas */
+.profile-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 42px;
+  align-items: start;
+}
+
+/* Seções */
+.profile-section {
+  margin-bottom: 40px;
+}
+
+/* Formulário */
+.profile-form {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.form-group {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.form-group label {
+  font-size: 15px;
+  color: var(--ink-soft);
+  font-family: Arial, Helvetica, sans-serif;
+}
+
+.form-group input {
+  padding: 12px 14px;
+  border: 1px solid rgba(138, 86, 49, 0.25);
+  border-radius: 6px;
+  background: rgba(255,255,255,0.55);
+  font-family: Georgia, "Times New Roman", serif;
+  font-size: 17px;
+  color: var(--ink);
+  transition: border-color 0.15s, background 0.15s;
+}
+
+.form-group input:focus {
+  outline: none;
+  border-color: var(--accent);
+  background: rgba(255,255,255,0.80);
+}
+
+.btn-save {
+  align-self: flex-start;
+  padding: 12px 30px;
+  border-radius: 4px;
+  border: none;
+  background: linear-gradient(180deg, #b06429, var(--accent-dark));
+  color: #fff2e9;
+  font-family: Georgia, "Times New Roman", serif;
+  font-size: 17px;
+  cursor: pointer;
+  box-shadow: inset 0 1px 0 rgba(255,255,255,0.15);
+  transition: opacity 0.15s;
+}
+
+.btn-save:hover {
+  opacity: 0.88;
+}
+
+.btn-save-prefs {
+  margin-top: 8px;
+}
+
+.form-message {
+  margin: 0;
+  font-size: 15px;
+  font-family: Arial, Helvetica, sans-serif;
+  min-height: 20px;
+  color: var(--accent);
+}
+
+.form-message.msg-success { color: #2a6e36; }
+.form-message.msg-error   { color: #8a3220; }
+
+/* Preferências — toggles */
+.pref-desc {
+  margin: 0 0 20px;
+  font-size: 17px;
+  color: var(--ink-soft);
+}
+
+.pref-list {
+  display: flex;
+  flex-direction: column;
+  gap: 18px;
+  margin-bottom: 24px;
+}
+
+.pref-toggle {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  cursor: pointer;
+  gap: 12px;
+}
+
+.pref-toggle input {
+  /* esconde o checkbox nativo */
+  position: absolute;
+  opacity: 0;
+  width: 0;
+  height: 0;
+}
+
+.pref-label {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  font-size: 18px;
+  color: var(--ink);
+}
+
+.pref-icon {
+  font-size: 20px;
+}
+
+/* Track do toggle */
+.toggle-track {
+  position: relative;
+  width: 46px;
+  height: 26px;
+  border-radius: 999px;
+  background: rgba(150, 120, 95, 0.25);
+  transition: background 0.2s;
+  flex-shrink: 0;
+}
+
+.toggle-thumb {
+  position: absolute;
+  top: 3px;
+  left: 3px;
+  width: 20px;
+  height: 20px;
+  border-radius: 999px;
+  background: #fff;
+  box-shadow: 0 2px 6px rgba(0,0,0,0.18);
+  transition: transform 0.2s, background 0.2s;
+}
+
+/* Estado checked */
+.pref-toggle input:checked ~ .toggle-track {
+  background: var(--accent);
+}
+
+.pref-toggle input:checked ~ .toggle-track .toggle-thumb {
+  transform: translateX(20px);
+}
+
+/* Histórico de resgates */
+.history-list {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 0;
+}
+
+.history-item {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  padding: 16px 0;
+  border-bottom: 1px solid rgba(200, 175, 155, 0.35);
+}
+
+.history-item:last-child {
+  border-bottom: none;
+}
+
+.history-dot {
+  width: 10px;
+  height: 10px;
+  border-radius: 999px;
+  background: var(--accent);
+  flex-shrink: 0;
+}
+
+.history-dot-expired {
+  background: rgba(150, 120, 95, 0.40);
+}
+
+.history-info {
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+  flex: 1;
+}
+
+.history-title {
+  font-size: 18px;
+  color: var(--ink);
+}
+
+.history-date {
+  font-size: 14px;
+  color: var(--ink-soft);
+  font-family: Arial, Helvetica, sans-serif;
+  opacity: 0.72;
+}
+
+.history-status {
+  font-size: 14px;
+  font-family: Arial, Helvetica, sans-serif;
+  font-weight: 600;
+  letter-spacing: 0.02em;
+  padding: 4px 12px;
+  border-radius: 999px;
+}
+
+.status-used {
+  background: rgba(40, 100, 50, 0.12);
+  color: #2d6e38;
+}
+
+.status-expired {
+  background: rgba(150, 100, 50, 0.12);
+  color: #7a5030;
+}
+
+/* Botão de logout */
+.logout-row {
+  margin-top: 8px;
+  margin-bottom: 16px;
+  display: flex;
+  justify-content: flex-end;
+}
+
+.btn-logout {
+  font-size: 16px;
+  color: var(--ink-soft);
+  border-bottom: 1px solid rgba(109, 72, 49, 0.35);
+  padding-bottom: 2px;
+  font-family: Arial, Helvetica, sans-serif;
+  opacity: 0.75;
+  transition: opacity 0.15s;
+}
+
+.btn-logout:hover {
+  opacity: 1;
+}
+
+/* Responsivo */
+@media (max-width: 860px) {
+  .profile-grid {
+    grid-template-columns: 1fr;
+    gap: 0;
+  }
+}
+
+@media (max-width: 600px) {
+  .profile-header {
+    gap: 18px;
+  }
+
+  .profile-avatar {
+    width: 68px;
+    height: 68px;
+  }
+
+  .avatar-initials {
+    font-size: 24px;
+  }
+
+  .profile-info h1 {
+    font-size: 28px;
+  }
+
+  .btn-save {
+    width: 100%;
+    text-align: center;
+    align-self: stretch;
+  }
+}

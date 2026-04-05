@@ -30,3 +30,8 @@ docker compose up -d
 uvicorn main:app --reload
 ``
 - Aesse: http://127.0.0.1:8000/login
+- Credenciais de Admin:
+```bash
+email:admin@admin.com
+senha:admin
+```

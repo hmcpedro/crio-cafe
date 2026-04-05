@@ -1,0 +1,270 @@
+/* =========================================
+   ofertas.css
+   Complementa home.css para a tela de ofertas
+   ========================================= */
+
+/* Seção de filtros */
+.filter-section {
+  margin-bottom: 32px;
+}
+
+.filter-header h1 {
+  margin: 0 0 8px;
+  font-size: clamp(44px, 5vw, 68px);
+  font-weight: 500;
+  line-height: 1.05;
+  letter-spacing: -0.02em;
+  color: var(--ink);
+}
+
+.filter-header p {
+  margin: 0 0 28px;
+  font-size: 22px;
+  color: var(--ink-soft);
+}
+
+.filter-bar {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+  margin-bottom: 28px;
+}
+
+.filter-chip {
+  padding: 10px 22px;
+  border-radius: 999px;
+  border: 1px solid rgba(138, 86, 49, 0.30);
+  background: transparent;
+  color: var(--ink-soft);
+  font-family: Georgia, "Times New Roman", serif;
+  font-size: 17px;
+  cursor: pointer;
+  transition: background 0.18s, color 0.18s, border-color 0.18s;
+}
+
+.filter-chip:hover {
+  background: rgba(138, 86, 49, 0.08);
+  border-color: rgba(138, 86, 49, 0.50);
+}
+
+.filter-chip.active {
+  background: var(--accent);
+  border-color: var(--accent);
+  color: #fff2e9;
+}
+
+.filter-divider {
+  height: 1px;
+  background: var(--line);
+}
+
+/* Grid de ofertas — layout 2 colunas (diferente do home que é 3) */
+.offers-grid-full {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 28px;
+  padding-top: 28px;
+}
+
+/* Card de oferta — versão horizontal */
+.offer-card-full {
+  display: grid;
+  grid-template-columns: 220px 1fr;
+  background:
+    linear-gradient(rgba(255,255,255,0.12), rgba(255,255,255,0.12)),
+    var(--paper-2);
+  border-radius: 8px;
+  overflow: hidden;
+  box-shadow: var(--card-shadow);
+  border: 1px solid rgba(116, 81, 58, 0.08);
+  transition: box-shadow 0.18s;
+}
+
+.offer-card-full:hover {
+  box-shadow: 0 12px 30px rgba(60, 31, 15, 0.16);
+}
+
+/* Imagem lateral */
+.offer-image-wrap {
+  position: relative;
+  overflow: hidden;
+}
+
+.offer-img {
+  width: 100%;
+  height: 100%;
+  display: block;
+  object-fit: cover;
+  object-position: center;
+}
+
+.offer-img-top {
+  object-position: center 18%;
+}
+
+/* Placeholder para campanha futura */
+.offer-image-placeholder {
+  background: rgba(200, 175, 155, 0.25);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 200px;
+}
+
+.placeholder-icon {
+  font-size: 52px;
+  opacity: 0.45;
+}
+
+/* Badge de status */
+.offer-badge {
+  position: absolute;
+  top: 12px;
+  left: 12px;
+  padding: 5px 12px;
+  border-radius: 999px;
+  font-family: Arial, Helvetica, sans-serif;
+  font-size: 13px;
+  font-weight: 600;
+  letter-spacing: 0.03em;
+}
+
+.badge-active {
+  background: rgba(40, 100, 50, 0.88);
+  color: #d6f5dc;
+}
+
+.badge-scheduled {
+  background: rgba(90, 70, 40, 0.82);
+  color: #f5e8d0;
+}
+
+/* Corpo do card */
+.offer-body {
+  padding: 20px 22px 22px;
+  display: flex;
+  flex-direction: column;
+  gap: 0;
+}
+
+.offer-meta {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin-bottom: 10px;
+  flex-wrap: wrap;
+}
+
+.offer-unit-tag,
+.offer-period-tag {
+  font-family: Arial, Helvetica, sans-serif;
+  font-size: 13px;
+  color: var(--ink-soft);
+}
+
+.offer-period-tag {
+  opacity: 0.72;
+}
+
+.offer-body h3 {
+  margin: 0 0 8px;
+  font-size: 26px;
+  font-weight: 500;
+  color: var(--ink);
+  line-height: 1.1;
+}
+
+.offer-desc-full {
+  margin: 0 0 14px;
+  font-size: 16px;
+  line-height: 1.5;
+  color: var(--ink-soft);
+  flex: 1;
+}
+
+.offer-time-row {
+  display: flex;
+  align-items: center;
+  gap: 7px;
+  margin-bottom: 16px;
+  font-size: 16px;
+  color: var(--ink);
+}
+
+.offer-time-muted {
+  opacity: 0.5;
+}
+
+.clock-icon {
+  font-size: 15px;
+}
+
+/* Botão de resgate */
+.offer-btn-full {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 100%;
+  min-height: 46px;
+  border-radius: 4px;
+  background: linear-gradient(180deg, #b06429, var(--accent-dark));
+  color: #fff2e9;
+  font-family: Georgia, "Times New Roman", serif;
+  font-size: 16px;
+  text-decoration: none;
+  box-shadow: inset 0 1px 0 rgba(255,255,255,0.15);
+  border: none;
+  cursor: pointer;
+  transition: opacity 0.15s;
+}
+
+.offer-btn-full:hover {
+  opacity: 0.88;
+}
+
+.btn-disabled {
+  background: rgba(150, 120, 95, 0.25);
+  color: var(--ink-soft);
+  opacity: 0.7;
+  cursor: not-allowed;
+  box-shadow: none;
+}
+
+/* Mensagem de filtro vazio */
+.no-results {
+  text-align: center;
+  padding: 52px 20px;
+  font-size: 22px;
+  color: var(--ink-soft);
+  opacity: 0.65;
+}
+
+/* Responsivo */
+@media (max-width: 960px) {
+  .offers-grid-full {
+    grid-template-columns: 1fr;
+  }
+}
+
+@media (max-width: 600px) {
+  .filter-header h1 {
+    font-size: 36px;
+  }
+
+  .filter-chip {
+    font-size: 15px;
+    padding: 8px 16px;
+  }
+
+  .offer-card-full {
+    grid-template-columns: 1fr;
+  }
+
+  .offer-image-wrap {
+    height: 200px;
+  }
+
+  .offer-image-placeholder {
+    height: 160px;
+  }
+}
