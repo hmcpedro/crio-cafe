@@ -1,29 +1,124 @@
 import json
+import logging
 import shutil
 import uuid as uuid_module
-from datetime import date as date_type, datetime
+from contextlib import asynccontextmanager
+from datetime import date as date_type, datetime, timezone
 from decimal import Decimal, InvalidOperation
 from pathlib import Path
 from typing import Optional
 
-from fastapi import FastAPI, Depends, HTTPException, status, Form, File, UploadFile, Query
+from apscheduler.schedulers.background import BackgroundScheduler
+from fastapi import BackgroundTasks, FastAPI, Depends, HTTPException, status, Form, File, UploadFile, Query
 from fastapi.responses import FileResponse, RedirectResponse
 from fastapi.staticfiles import StaticFiles
 from sqlalchemy import select
 from sqlalchemy.orm import Session
 
-from database import get_db
-from models import User, Cliente, PreferenciaCliente, Localizacao, Campanha, NotificacaoCampanha
+from database import get_db, SessionLocal
+from models import User, Cliente, PreferenciaCliente, Localizacao, Campanha, NotificacaoCampanha, Resgate
+# notificacoes.py é usado apenas pelo notificador.py (script local, fora do Docker)
 from schemas import (
     RegisterRequest, LoginRequest, AuthResponse,
     UserProfileResponse, UpdateProfileRequest, ChangePasswordRequest,
     PreferenciasResponse, PreferenciasRequest, LocalizacaoRequest,
-    CampanhaResponse, NotificacaoResponse,
+    CampanhaResponse, NotificacaoResponse, ResgateResponse,
 )
 from security import hash_password, verify_password
 from auth import create_access_token, get_current_user
 
-app = FastAPI(title="Crio Café")
+logger    = logging.getLogger("main")
+scheduler = BackgroundScheduler(timezone="America/Sao_Paulo")
+
+
+# ── Helpers de notificação ────────────────────────────────────────────────────
+
+def _clientes_ativos() -> list[dict]:
+    """Retorna [{phone, name}] de todos os clientes ativos (não-admin)."""
+    db = SessionLocal()
+    try:
+        users = db.scalars(
+            select(User).where(User.is_active == True, User.is_admin == False)
+        ).all()
+        return [{"phone": u.phone, "name": u.name} for u in users]
+    finally:
+        db.close()
+
+
+def _executar_disparo(campanha_id: str) -> None:
+    """
+    Marca a notificação como 'aguardando_disparo'.
+    O envio real é feito pelo notificador.py rodando na máquina local (fora do Docker),
+    pois pywhatkit precisa de browser e WhatsApp Web ativos.
+    """
+    db = SessionLocal()
+    try:
+        uid   = uuid_module.UUID(campanha_id)
+        notif = db.scalar(
+            select(NotificacaoCampanha).where(
+                NotificacaoCampanha.id_campanha == uid,
+                NotificacaoCampanha.status == "pendente",
+            )
+        )
+        if notif:
+            notif.status = "aguardando_disparo"
+            db.commit()
+            logger.info(f"[NOTIF] Campanha {campanha_id} marcada como aguardando_disparo.")
+    except Exception as exc:
+        logger.exception(f"[NOTIF] Erro ao marcar disparo: {exc}")
+    finally:
+        db.close()
+
+
+def _agendar_campanha(campanha_id: str, quando: datetime) -> None:
+    """Adiciona job no APScheduler para enviar a campanha na data/hora agendada."""
+    job_id = f"notif_{campanha_id}"
+    if scheduler.get_job(job_id):
+        scheduler.reschedule_job(job_id, trigger="date", run_date=quando)
+    else:
+        scheduler.add_job(
+            func=_executar_disparo,
+            trigger="date",
+            run_date=quando,
+            args=[campanha_id],
+            id=job_id,
+        )
+    logger.info(f"[NOTIF] Agendado disparo para campanha {campanha_id} em {quando}.")
+
+
+def _recarregar_agendamentos() -> None:
+    """
+    Ao iniciar o servidor, recarrega no scheduler todas as notificações
+    agendadas que ainda estão pendentes e com data futura.
+    """
+    db = SessionLocal()
+    try:
+        agora = datetime.now(timezone.utc)
+        pendentes = db.scalars(
+            select(NotificacaoCampanha).where(
+                NotificacaoCampanha.tipo == "agendada",
+                NotificacaoCampanha.status == "pendente",
+                NotificacaoCampanha.agendado_para > agora,
+            )
+        ).all()
+        for n in pendentes:
+            _agendar_campanha(str(n.id_campanha), n.agendado_para)
+        logger.info(f"[NOTIF] {len(pendentes)} agendamento(s) recarregado(s) no scheduler.")
+    finally:
+        db.close()
+
+
+# ── Lifespan (startup / shutdown) ─────────────────────────────────────────────
+
+@asynccontextmanager
+async def lifespan(app: FastAPI):
+    scheduler.start()
+    _recarregar_agendamentos()
+    yield
+    scheduler.shutdown(wait=False)
+
+
+app = FastAPI(title="Crio Café", lifespan=lifespan)
 
 BASE_DIR = Path(__file__).resolve().parent.parent
 FRONTEND_DIR = BASE_DIR / "frontend"
@@ -327,6 +422,18 @@ def update_preferencias(
 
 # ── Localização ───────────────────────────────────────────────────────────────
 
+@app.patch("/api/me/permissao-localizacao", status_code=status.HTTP_204_NO_CONTENT)
+def set_permissao_localizacao(
+    permitir: bool = Query(...),
+    current_user: User = Depends(get_current_user),
+    db: Session = Depends(get_db),
+):
+    cliente = db.scalar(select(Cliente).where(Cliente.id_cliente == current_user.id))
+    if cliente:
+        cliente.permissao_localizacao = permitir
+        db.commit()
+
+
 @app.post("/api/me/localizacao", status_code=status.HTTP_201_CREATED)
 def post_localizacao(
     data: LocalizacaoRequest,
@@ -347,6 +454,7 @@ def post_localizacao(
 
 @app.post("/api/campanhas", response_model=CampanhaResponse, status_code=status.HTTP_201_CREATED)
 async def create_campanha(
+    background_tasks: BackgroundTasks,
     nome: str = Form(...),
     descricao: str = Form(...),
     produto_alvo: str = Form(...),
@@ -498,7 +606,42 @@ async def create_campanha(
     db.commit()
     db.refresh(campanha)
 
-    return _campanha_to_schema(campanha)
+    schema = _campanha_to_schema(campanha)
+
+    # Disparo automático conforme tipo_notificacao
+    if tipo_notificacao == "imediata":
+        background_tasks.add_task(_executar_disparo, str(campanha.id))
+    elif tipo_notificacao == "agendada" and notif_agendada:
+        _agendar_campanha(str(campanha.id), notif_agendada)
+
+    return schema
+
+
+@app.post("/api/campanhas/{campanha_id}/notificar", status_code=status.HTTP_202_ACCEPTED)
+def notificar_campanha_manual(
+    campanha_id: str,
+    background_tasks: BackgroundTasks,
+    current_user: User = Depends(get_current_user),
+    db: Session = Depends(get_db),
+):
+    """Dispara manualmente a notificação WhatsApp de uma campanha."""
+    if not current_user.is_admin:
+        raise HTTPException(status_code=403, detail="Acesso restrito a administradores.")
+
+    try:
+        uid = uuid_module.UUID(campanha_id)
+    except ValueError:
+        raise HTTPException(status_code=400, detail="ID inválido.")
+
+    campanha = db.scalar(select(Campanha).where(Campanha.id == uid))
+    if not campanha:
+        raise HTTPException(status_code=404, detail="Campanha não encontrada.")
+
+    if _compute_status(campanha) == "encerrada":
+        raise HTTPException(status_code=400, detail="Não é possível notificar uma campanha encerrada.")
+
+    background_tasks.add_task(_executar_disparo, str(campanha.id))
+    return {"message": "Disparo iniciado em background."}
 
 
 @app.get("/api/campanhas", response_model=list[CampanhaResponse])
@@ -529,6 +672,71 @@ def get_campanha(campanha_id: str, db: Session = Depends(get_db)):
         raise HTTPException(status_code=404, detail="Campanha não encontrada.")
 
     return _campanha_to_schema(campanha)
+
+
+@app.post("/api/campanhas/{campanha_id}/resgatar", response_model=ResgateResponse, status_code=status.HTTP_201_CREATED)
+def resgatar_campanha(
+    campanha_id: str,
+    current_user: User = Depends(get_current_user),
+    db: Session = Depends(get_db),
+):
+    try:
+        uid = uuid_module.UUID(campanha_id)
+    except ValueError:
+        raise HTTPException(status_code=400, detail="ID inválido.")
+
+    campanha = db.scalar(select(Campanha).where(Campanha.id == uid))
+    if not campanha:
+        raise HTTPException(status_code=404, detail="Campanha não encontrada.")
+
+    campanha_status = _compute_status(campanha)
+    if campanha_status != "ativa":
+        raise HTTPException(status_code=400, detail="Esta campanha não está ativa.")
+
+    existing = db.scalar(
+        select(Resgate).where(
+            Resgate.id_usuario == current_user.id,
+            Resgate.id_campanha == campanha.id,
+        )
+    )
+    if existing:
+        raise HTTPException(status_code=409, detail="Benefício já resgatado.")
+
+    resgate = Resgate(id_usuario=current_user.id, id_campanha=campanha.id)
+    db.add(resgate)
+    db.commit()
+    db.refresh(resgate)
+
+    return ResgateResponse(
+        id=str(resgate.id),
+        campanha_id=str(campanha.id),
+        campanha_nome=campanha.nome,
+        campanha_status=campanha_status,
+        resgatado_em=resgate.resgatado_em.isoformat(),
+    )
+
+
+@app.get("/api/me/resgates", response_model=list[ResgateResponse])
+def get_meus_resgates(
+    current_user: User = Depends(get_current_user),
+    db: Session = Depends(get_db),
+):
+    resgates = db.scalars(
+        select(Resgate)
+        .where(Resgate.id_usuario == current_user.id)
+        .order_by(Resgate.resgatado_em.desc())
+    ).all()
+
+    return [
+        ResgateResponse(
+            id=str(r.id),
+            campanha_id=str(r.id_campanha),
+            campanha_nome=r.campanha.nome,
+            campanha_status=_compute_status(r.campanha),
+            resgatado_em=r.resgatado_em.isoformat(),
+        )
+        for r in resgates
+    ]
 
 
 @app.patch("/api/campanhas/{campanha_id}/encerrar", response_model=CampanhaResponse)

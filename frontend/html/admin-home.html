@@ -33,66 +33,8 @@
           </div>
           <div class="campaign-divider"></div>
 
-          <div class="campaign-grid">
-            <article class="campaign-card">
-              <div class="card-image-wrap">
-                <img
-                  src="/static/img/campaign_006.png"
-                  alt="Vale da tarde"
-                  class="card-image"
-                />
-                <div class="card-overlay">
-                  <div class="card-overlay-top">
-                    <h2>Vale da tarde</h2>
-                    <p class="card-dates">20 a 25 de maio</p>
-                    <p class="card-status">Ativa</p>
-                  </div>
-                  <a href="/admin/campanha-detalhe" class="card-details-btn">Ver Detalhes</a>
-                  <img src="/static/img/logo-aromap.png" alt="Aromap" class="card-mini-logo" />
-                </div>
-              </div>
-              <div class="card-footer">De 20 à 25 de maio</div>
-            </article>
-
-            <article class="campaign-card">
-              <div class="card-image-wrap">
-                <img
-                  src="/static/img/campaign_002.png"
-                  alt="Combo Espresso"
-                  class="card-image"
-                />
-                <div class="card-overlay">
-                  <div class="card-overlay-top">
-                    <h2>Combo Espresso</h2>
-                    <p class="card-dates">10 a 15 de maio</p>
-                    <p class="card-status">Ativa</p>
-                  </div>
-                  <a href="/admin/campanha-detalhe" class="card-details-btn">Ver Detalhes</a>
-                  <img src="/static/img/logo-aromap.png" alt="Aromap" class="card-mini-logo" />
-                </div>
-              </div>
-              <div class="card-footer">De 10 à 15 de maio</div>
-            </article>
-
-            <article class="campaign-card">
-              <div class="card-image-wrap">
-                <img
-                  src="/static/img/campaign_003.png"
-                  alt="Pão de Queijo"
-                  class="card-image"
-                />
-                <div class="card-overlay">
-                  <div class="card-overlay-top">
-                    <h2>Pão de Queijo</h2>
-                    <p class="card-dates">5 a 10 de maio</p>
-                    <p class="card-status card-status--ended">Encerrada</p>
-                  </div>
-                  <a href="/admin/campanha-detalhe" class="card-details-btn">Ver Detalhes</a>
-                  <img src="/static/img/logo-aromap.png" alt="Aromap" class="card-mini-logo" />
-                </div>
-              </div>
-              <div class="card-footer">De 5 à 10 de maio</div>
-            </article>
+          <div class="campaign-grid" id="campaignGrid">
+            <!-- preenchido dinamicamente por admin-home.js -->
           </div>
         </section>
 
@@ -103,10 +45,8 @@
               <div class="summary-line"></div>
             </div>
 
-            <ul>
-              <li>Café da Tarde</li>
-              <li>Combo Espresso</li>
-              <li>Pão de Queijo</li>
+            <ul id="listaAtivas">
+              <!-- preenchido dinamicamente -->
             </ul>
           </div>
 
@@ -120,17 +60,17 @@
 
             <div class="metric-grid">
               <div class="metric-card">
-                <strong>4</strong>
+                <strong id="metAtivas">—</strong>
                 <span>Campanhas Ativas</span>
               </div>
 
               <div class="metric-card">
-                <strong>12</strong>
+                <strong id="metTotal">—</strong>
                 <span>Campanhas Criadas</span>
               </div>
 
               <div class="metric-card">
-                <strong>128</strong>
+                <strong id="metNotifs">—</strong>
                 <span>Notificações Enviadas</span>
               </div>
             </div>
@@ -144,5 +84,7 @@
       </footer>
     </div>
   </div>
+
+  <script src="/static/js/admin-home.js"></script>
 </body>
 </html>

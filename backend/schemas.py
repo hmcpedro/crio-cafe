@@ -84,6 +84,14 @@ class NotificacaoResponse(BaseModel):
     criado_em: str
 
 
+class ResgateResponse(BaseModel):
+    id: str
+    campanha_id: str
+    campanha_nome: str
+    campanha_status: str   # ativa | agendada | encerrada
+    resgatado_em: str      # ISO datetime
+
+
 class CampanhaResponse(BaseModel):
     id: str
     nome: str

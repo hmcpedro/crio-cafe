@@ -4,7 +4,7 @@ const MONTHS_PT = [
 ];
 
 function fmtDate(iso) {
-  const [y, m, d] = iso.split('-').map(Number);
+  const [, m, d] = iso.split('-').map(Number);
   return `${d} de ${MONTHS_PT[m - 1]}`;
 }
 
@@ -17,8 +17,16 @@ const UNIDADE_MAP = {
   'jardim-paulista': { label: 'Jardim Paulista', filter: 'jardimpaulista' },
 };
 
+// IDs das campanhas já resgatadas pelo usuário logado
+let resgatados = new Set();
+
+function getToken() {
+  return localStorage.getItem('aromap_token');
+}
+
 function buildCard(c) {
-  const isAtiva = c.status === 'ativa';
+  const isAtiva     = c.status === 'ativa';
+  const jaResgatado = resgatados.has(c.id);
 
   const badgeClass = isAtiva ? 'badge-active'  : 'badge-scheduled';
   const badgeLabel = isAtiva ? 'Ativa agora'   : 'Em breve';
@@ -33,10 +41,6 @@ function buildCard(c) {
   const horario      = c.hora_inicio && c.hora_fim ? `${c.hora_inicio} às ${c.hora_fim}` : 'A definir';
   const horarioClass = c.hora_inicio ? 'offer-time-row' : 'offer-time-row offer-time-muted';
 
-  const btn = isAtiva
-    ? `<a href="#" class="offer-btn-full" aria-label="Resgatar oferta ${c.nome}">Resgatar benefício</a>`
-    : `<button class="offer-btn-full btn-disabled" disabled>Disponível em breve</button>`;
-
   const unitFilter = c.unidades && c.unidades.length === 1
     ? (UNIDADE_MAP[c.unidades[0]]?.filter || 'outras')
     : 'todas';
@@ -44,6 +48,15 @@ function buildCard(c) {
   const unitLabel = c.unidades && c.unidades.length === 1
     ? (UNIDADE_MAP[c.unidades[0]]?.label || c.unidades[0])
     : 'Todas as unidades';
+
+  let btn;
+  if (!isAtiva) {
+    btn = `<button class="offer-btn-full btn-disabled" disabled>Disponível em breve</button>`;
+  } else if (jaResgatado) {
+    btn = `<button class="offer-btn-full btn-redeemed" disabled>Já resgatado</button>`;
+  } else {
+    btn = `<button class="offer-btn-full" data-campanha-id="${c.id}" aria-label="Resgatar oferta ${c.nome}">Resgatar benefício</button>`;
+  }
 
   return `
     <article class="offer-card-full" data-unit="${unitFilter}" data-status="${isAtiva ? 'active' : 'scheduled'}">
@@ -67,17 +80,73 @@ function buildCard(c) {
     </article>`;
 }
 
+async function resgatar(btn) {
+  const campanhaId = btn.dataset.campanhaId;
+  const token      = getToken();
+
+  if (!token) { window.location.href = '/login'; return; }
+
+  btn.disabled    = true;
+  btn.textContent = 'Aguarde...';
+
+  try {
+    const res = await fetch(`/api/campanhas/${campanhaId}/resgatar`, {
+      method:  'POST',
+      headers: { 'Authorization': `Bearer ${token}` },
+    });
+
+    if (res.status === 401) {
+      localStorage.removeItem('aromap_token');
+      window.location.href = '/login';
+      return;
+    }
+
+    if (res.status === 201 || res.status === 409) {
+      btn.textContent = res.status === 201 ? 'Resgatado ✓' : 'Já resgatado';
+      btn.classList.add('btn-redeemed');
+      resgatados.add(campanhaId);
+      return;
+    }
+
+    // Erro inesperado — reabilita o botão
+    const data = await res.json().catch(() => ({}));
+    btn.disabled    = false;
+    btn.textContent = data.detail || 'Erro ao resgatar';
+    setTimeout(() => { btn.textContent = 'Resgatar benefício'; }, 3000);
+
+  } catch {
+    btn.disabled    = false;
+    btn.textContent = 'Resgatar benefício';
+  }
+}
+
 async function loadOfertas() {
+  const token = getToken();
+  if (!token) { window.location.href = '/login'; return; }
+
   const grid      = document.getElementById('offersGrid');
   const noResults = document.getElementById('noResults');
 
   grid.innerHTML = '<p style="padding:1rem;grid-column:1/-1">Carregando ofertas...</p>';
 
   try {
-    const res  = await fetch('/api/campanhas');
-    const data = await res.json();
+    const [campanhasRes, resgatesRes] = await Promise.all([
+      fetch('/api/campanhas'),
+      fetch('/api/me/resgates', { headers: { 'Authorization': `Bearer ${token}` } }),
+    ]);
 
-    // Clientes veem apenas ativas e agendadas
+    if (resgatesRes.status === 401) {
+      localStorage.removeItem('aromap_token');
+      window.location.href = '/login';
+      return;
+    }
+
+    if (resgatesRes.ok) {
+      const resgateData = await resgatesRes.json();
+      resgatados = new Set(resgateData.map(r => r.campanha_id));
+    }
+
+    const data     = await campanhasRes.json();
     const visiveis = Array.isArray(data)
       ? data.filter(c => c.status === 'ativa' || c.status === 'agendada')
       : [];
@@ -89,7 +158,12 @@ async function loadOfertas() {
       return;
     }
 
-    visiveis.forEach(c => { grid.innerHTML += buildCard(c); });
+    grid.innerHTML = visiveis.map(buildCard).join('');
+
+    // Listener direto em cada botão de resgate
+    grid.querySelectorAll('button[data-campanha-id]').forEach(btn => {
+      btn.addEventListener('click', () => resgatar(btn));
+    });
 
     activateFilters();
 

@@ -251,6 +251,20 @@ a { color: inherit; text-decoration: none; }
   opacity: 0.90;
 }
 
+/* ── Placeholders de imagem ── */
+.hero-banner-placeholder {
+  height: 500px;
+  background: linear-gradient(135deg, var(--ink) 0%, var(--accent-dark) 100%);
+  display: block;
+}
+
+.offer-card-placeholder {
+  width: 100%;
+  aspect-ratio: 4 / 2.6;
+  background: linear-gradient(135deg, var(--paper-2) 0%, var(--line) 100%);
+  display: block;
+}
+
 /* ── Section title ── */
 .section-title-row {
   display: flex;
@@ -350,11 +364,30 @@ a { color: inherit; text-decoration: none; }
   background: linear-gradient(180deg, #b06429, var(--accent-dark));
   color: #fff2e9;
   font-size: 16px;
+  font-family: Georgia, "Times New Roman", serif;
+  border: none;
+  cursor: pointer;
   box-shadow: inset 0 1px 0 rgba(255,255,255,0.14);
   transition: opacity 0.16s;
 }
 
 .offer-btn:hover { opacity: 0.88; }
+
+/* hero button quando elemento é <button> */
+.hero-button {
+  border: none;
+  cursor: pointer;
+  font-family: Georgia, "Times New Roman", serif;
+}
+
+/* Estado "já resgatado" — compartilhado entre hero e cards */
+.btn-redeemed {
+  background: rgba(40, 100, 50, 0.75) !important;
+  color: #d6f5dc !important;
+  cursor: default !important;
+  box-shadow: none !important;
+  opacity: 1 !important;
+}
 
 /* ── Footer ── */
 .page-footer {

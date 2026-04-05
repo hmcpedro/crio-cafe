@@ -30,9 +30,9 @@
             <p>Desempenho das campanhas e engajamento dos clientes</p>
           </div>
           <div class="period-selector">
-            <button class="period-btn active">Este mês</button>
-            <button class="period-btn">Últimos 3 meses</button>
-            <button class="period-btn">Este ano</button>
+            <button class="period-btn active" data-period="mes">Este mês</button>
+            <button class="period-btn" data-period="3m">Últimos 3 meses</button>
+            <button class="period-btn" data-period="ano">Este ano</button>
           </div>
         </section>
 
@@ -41,24 +41,20 @@
         <!-- Métricas gerais -->
         <section class="metrics-row">
           <div class="metric-tile">
-            <strong>128</strong>
+            <strong id="metNotifs">—</strong>
+            <span>Notificações criadas</span>
+          </div>
+          <div class="metric-tile">
+            <strong id="metEnviadas">—</strong>
             <span>Notificações enviadas</span>
           </div>
-          <div class="metric-tile">
-            <strong>47</strong>
-            <span>Resgates realizados</span>
-          </div>
           <div class="metric-tile metric-tile--accent">
-            <strong>36%</strong>
-            <span>Taxa de resgate</span>
-          </div>
-          <div class="metric-tile">
-            <strong>4</strong>
+            <strong id="metAtivas">—</strong>
             <span>Campanhas ativas</span>
           </div>
           <div class="metric-tile">
-            <strong>312</strong>
-            <span>Clientes notificados</span>
+            <strong id="metTotal">—</strong>
+            <span>Total de campanhas</span>
           </div>
         </section>
 
@@ -82,51 +78,9 @@
                   <th>Barra</th>
                 </tr>
               </thead>
-              <tbody>
+              <tbody id="reportTbody">
                 <tr>
-                  <td class="td-name">Vale da tarde</td>
-                  <td><span class="badge-ativa">Ativa</span></td>
-                  <td>20–25 mai</td>
-                  <td>47</td>
-                  <td>18</td>
-                  <td>38%</td>
-                  <td class="td-bar"><div class="bar-track"><div class="bar-fill" style="width:38%"></div></div></td>
-                </tr>
-                <tr>
-                  <td class="td-name">Combo Espresso</td>
-                  <td><span class="badge-ativa">Ativa</span></td>
-                  <td>Permanente</td>
-                  <td>35</td>
-                  <td>14</td>
-                  <td>40%</td>
-                  <td class="td-bar"><div class="bar-track"><div class="bar-fill" style="width:40%"></div></div></td>
-                </tr>
-                <tr>
-                  <td class="td-name">Happy Hour</td>
-                  <td><span class="badge-ativa">Ativa</span></td>
-                  <td>Permanente</td>
-                  <td>28</td>
-                  <td>9</td>
-                  <td>32%</td>
-                  <td class="td-bar"><div class="bar-track"><div class="bar-fill" style="width:32%"></div></div></td>
-                </tr>
-                <tr>
-                  <td class="td-name">Verão Gelado</td>
-                  <td><span class="badge-ativa">Ativa</span></td>
-                  <td>Permanente</td>
-                  <td>18</td>
-                  <td>6</td>
-                  <td>33%</td>
-                  <td class="td-bar"><div class="bar-track"><div class="bar-fill" style="width:33%"></div></div></td>
-                </tr>
-                <tr class="row-dim">
-                  <td class="td-name">Pão de Queijo</td>
-                  <td><span class="badge-encerrada">Encerrada</span></td>
-                  <td>5–10 mai</td>
-                  <td>22</td>
-                  <td>7</td>
-                  <td>31%</td>
-                  <td class="td-bar"><div class="bar-track"><div class="bar-fill bar-fill--dim" style="width:31%"></div></div></td>
+                  <td colspan="7" style="text-align:center;padding:2rem;color:#999">Carregando...</td>
                 </tr>
               </tbody>
             </table>
@@ -140,52 +94,8 @@
             <div class="section-line"></div>
           </div>
 
-          <div class="units-grid">
-            <div class="unit-card">
-              <h3>Vila Mariana</h3>
-              <div class="unit-stats">
-                <div class="unit-stat">
-                  <strong>84</strong>
-                  <span>Notificações</span>
-                </div>
-                <div class="unit-stat">
-                  <strong>31</strong>
-                  <span>Resgates</span>
-                </div>
-                <div class="unit-stat unit-stat--accent">
-                  <strong>37%</strong>
-                  <span>Taxa</span>
-                </div>
-              </div>
-              <div class="unit-bar-wrap">
-                <div class="unit-bar-track">
-                  <div class="unit-bar-fill" style="width:37%"></div>
-                </div>
-              </div>
-            </div>
-
-            <div class="unit-card">
-              <h3>Jardim Paulista</h3>
-              <div class="unit-stats">
-                <div class="unit-stat">
-                  <strong>44</strong>
-                  <span>Notificações</span>
-                </div>
-                <div class="unit-stat">
-                  <strong>16</strong>
-                  <span>Resgates</span>
-                </div>
-                <div class="unit-stat unit-stat--accent">
-                  <strong>36%</strong>
-                  <span>Taxa</span>
-                </div>
-              </div>
-              <div class="unit-bar-wrap">
-                <div class="unit-bar-track">
-                  <div class="unit-bar-fill" style="width:36%"></div>
-                </div>
-              </div>
-            </div>
+          <div class="units-grid" id="unitsGrid">
+            <!-- preenchido dinamicamente -->
           </div>
         </section>
 
@@ -198,13 +108,6 @@
     </div>
   </div>
 
-  <script>
-    document.querySelectorAll('.period-btn').forEach(btn => {
-      btn.addEventListener('click', () => {
-        document.querySelectorAll('.period-btn').forEach(b => b.classList.remove('active'));
-        btn.classList.add('active');
-      });
-    });
-  </script>
+  <script src="/static/js/admin-relatorios.js?v=2"></script>
 </body>
 </html>

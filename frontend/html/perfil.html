@@ -175,34 +175,12 @@
                 <div class="section-line"></div>
               </div>
 
-              <ul class="history-list">
-                <li class="history-item">
-                  <div class="history-dot"></div>
-                  <div class="history-info">
-                    <span class="history-title">Vale da tarde</span>
-                    <span class="history-date">18 de maio, 15h32</span>
-                  </div>
-                  <span class="history-status status-used">Resgatado</span>
-                </li>
-
-                <li class="history-item">
-                  <div class="history-dot"></div>
-                  <div class="history-info">
-                    <span class="history-title">Combo Espresso</span>
-                    <span class="history-date">12 de maio, 16h05</span>
-                  </div>
-                  <span class="history-status status-used">Resgatado</span>
-                </li>
-
-                <li class="history-item">
-                  <div class="history-dot history-dot-expired"></div>
-                  <div class="history-info">
-                    <span class="history-title">Happy Hour</span>
-                    <span class="history-date">04 de maio, 18h50</span>
-                  </div>
-                  <span class="history-status status-expired">Expirado</span>
-                </li>
+              <ul class="history-list" id="historyList">
+                <!-- preenchido dinamicamente por perfil.js -->
               </ul>
+              <p id="historyEmpty" style="display:none;font-size:16px;color:var(--ink-soft);opacity:0.65;font-family:Arial,sans-serif;">
+                Nenhum benefício resgatado ainda.
+              </p>
             </section>
 
           </div>
@@ -223,6 +201,6 @@
     </div>
   </div>
 
-  <script src="/static/js/perfil.js"></script>
+  <script src="/static/js/perfil.js?v=3"></script>
 </body>
 </html>

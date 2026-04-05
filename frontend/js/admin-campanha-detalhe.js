@@ -91,6 +91,40 @@ async function loadDetalhe() {
       );
     }
 
+    // Botão notificar (apenas para campanha manual e não encerrada)
+    const btnNotificar = document.getElementById('btnNotificar');
+    if (btnNotificar) {
+      const temNotifPendente = c.notificacoes.some(n => n.status === 'pendente');
+      const podeNotificar    = c.tipo_notificacao === 'manual'
+                             && c.status !== 'encerrada'
+                             && temNotifPendente;
+
+      if (podeNotificar) {
+        btnNotificar.style.display = '';
+        btnNotificar.addEventListener('click', async () => {
+          if (!confirm(`Enviar notificação WhatsApp para todos os clientes sobre "${c.nome}"?`)) return;
+
+          btnNotificar.disabled    = true;
+          btnNotificar.textContent = 'Enviando...';
+
+          const token = localStorage.getItem('aromap_token');
+          const r = await fetch(`/api/campanhas/${c.id}/notificar`, {
+            method:  'POST',
+            headers: token ? { Authorization: `Bearer ${token}` } : {},
+          });
+
+          if (r.ok) {
+            btnNotificar.textContent = 'Disparado ✓';
+          } else {
+            btnNotificar.disabled    = false;
+            btnNotificar.textContent = 'Enviar notificação';
+            const err = await r.json().catch(() => ({}));
+            alert(err.detail || 'Erro ao disparar notificação.');
+          }
+        });
+      }
+    }
+
     // Botão encerrar
     const btnEncerrar = document.getElementById('btnEncerrar');
     if (btnEncerrar) {

@@ -66,6 +66,35 @@ button {
   font-weight: bold;
 }
 
+/* Consentimento de localização */
+.location-consent {
+  display: flex;
+  align-items: flex-start;
+  gap: 10px;
+  padding: 12px;
+  border: 1px solid #e0d8d0;
+  border-radius: 8px;
+  background: #faf7f4;
+  cursor: pointer;
+}
+
+.location-consent input[type="checkbox"] {
+  width: 18px;
+  height: 18px;
+  margin-top: 2px;
+  flex-shrink: 0;
+  accent-color: #6b4226;
+  cursor: pointer;
+  border: none;
+  padding: 0;
+}
+
+.location-consent span {
+  font-size: 13px;
+  color: #5a3e2e;
+  line-height: 1.5;
+}
+
 .message {
   margin-top: 16px;
   text-align: center;

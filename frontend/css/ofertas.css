@@ -230,6 +230,14 @@
   box-shadow: none;
 }
 
+.btn-redeemed {
+  background: rgba(40, 100, 50, 0.75) !important;
+  color: #d6f5dc !important;
+  cursor: default !important;
+  box-shadow: none !important;
+  opacity: 1 !important;
+}
+
 /* Mensagem de filtro vazio */
 .no-results {
   text-align: center;

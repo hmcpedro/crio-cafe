@@ -196,7 +196,56 @@ document.querySelector(".btn-logout")?.addEventListener("click", (e) => {
   redirectToLogin();
 });
 
+// ── Histórico de resgates ──────────────────────────────────────────────────
+
+const MONTHS_PT = [
+  'janeiro','fevereiro','março','abril','maio','junho',
+  'julho','agosto','setembro','outubro','novembro','dezembro',
+];
+
+function fmtDateTime(iso) {
+  const dt    = new Date(iso);
+  const day   = dt.getDate();
+  const month = MONTHS_PT[dt.getMonth()];
+  const hh    = String(dt.getHours()).padStart(2, '0');
+  const mm    = String(dt.getMinutes()).padStart(2, '0');
+  return `${day} de ${month}, ${hh}h${mm}`;
+}
+
+async function loadHistorico() {
+  const list  = document.getElementById('historyList');
+  const empty = document.getElementById('historyEmpty');
+
+  const res = await apiFetch('/api/me/resgates');
+  if (!res || !res.ok) return;
+
+  const data = await res.json();
+
+  if (data.length === 0) {
+    empty.style.display = 'block';
+    return;
+  }
+
+  list.innerHTML = data.map(r => {
+    const isExpired  = r.campanha_status === 'encerrada';
+    const dotClass   = isExpired ? 'history-dot history-dot-expired' : 'history-dot';
+    const statusCls  = isExpired ? 'history-status status-expired'   : 'history-status status-used';
+    const statusText = isExpired ? 'Expirado' : 'Resgatado';
+
+    return `
+      <li class="history-item">
+        <div class="${dotClass}"></div>
+        <div class="history-info">
+          <span class="history-title">${r.campanha_nome}</span>
+          <span class="history-date">${fmtDateTime(r.resgatado_em)}</span>
+        </div>
+        <span class="${statusCls}">${statusText}</span>
+      </li>`;
+  }).join('');
+}
+
 // ── Init ───────────────────────────────────────────────────────────────────
 
 loadProfile();
 loadPreferencias();
+loadHistorico();

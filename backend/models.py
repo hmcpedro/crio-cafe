@@ -3,7 +3,7 @@ from datetime import date, datetime, time
 from decimal import Decimal
 from typing import Optional
 
-from sqlalchemy import String, Boolean, DateTime, Numeric, ForeignKey, Text, Date, Time, func
+from sqlalchemy import String, Boolean, DateTime, Numeric, ForeignKey, Text, Date, Time, func, UniqueConstraint
 from sqlalchemy.dialects.postgresql import UUID, ARRAY
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
@@ -103,6 +103,22 @@ class Campanha(Base):
     notificacoes: Mapped[list["NotificacaoCampanha"]] = relationship(
         "NotificacaoCampanha", back_populates="campanha", cascade="all, delete-orphan"
     )
+
+
+class Resgate(Base):
+    __tablename__ = "resgates"
+    __table_args__ = (UniqueConstraint("id_usuario", "id_campanha", name="uq_resgate_usuario_campanha"),)
+
+    id: Mapped[uuid.UUID] = mapped_column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
+    id_usuario: Mapped[uuid.UUID] = mapped_column(
+        UUID(as_uuid=True), ForeignKey("users.id", ondelete="CASCADE"), nullable=False
+    )
+    id_campanha: Mapped[uuid.UUID] = mapped_column(
+        UUID(as_uuid=True), ForeignKey("campanhas.id", ondelete="CASCADE"), nullable=False
+    )
+    resgatado_em: Mapped[datetime] = mapped_column(DateTime, nullable=False, server_default=func.now())
+
+    campanha: Mapped["Campanha"] = relationship("Campanha")
 
 
 class NotificacaoCampanha(Base):

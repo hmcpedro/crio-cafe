@@ -37,9 +37,9 @@ CREATE TABLE notificacoes_campanha (
                      CHECK (tipo IN ('imediata', 'agendada', 'manual')),
     agendado_para TIMESTAMP,
     enviado_em    TIMESTAMP,
-    -- pendente = aguardando envio | enviada = confirmado | cancelada = abortado
+    -- pendente = aguardando envio | aguardando_disparo = na fila do notificador.py | enviando = em progresso | enviada = confirmado | cancelada = abortado
     status        VARCHAR(20) NOT NULL DEFAULT 'pendente'
-                     CHECK (status IN ('pendente', 'enviada', 'cancelada')),
+                     CHECK (status IN ('pendente', 'aguardando_disparo', 'enviando', 'enviada', 'cancelada')),
     criado_em     TIMESTAMP   NOT NULL DEFAULT CURRENT_TIMESTAMP
 );
 

@@ -141,6 +141,26 @@ a { text-decoration: none; color: inherit; }
 
 .btn-danger:hover { background: rgba(160, 50, 35, 0.20); }
 
+.btn-notif {
+  display: inline-block;
+  padding: 11px 26px;
+  border-radius: 4px;
+  background: rgba(30, 110, 55, 0.12);
+  border: 1.5px solid rgba(30, 110, 55, 0.35);
+  color: #1e6e37;
+  font-size: 17px;
+  font-family: Georgia, "Times New Roman", serif;
+  cursor: pointer;
+  transition: background 0.15s;
+}
+
+.btn-notif:hover:not(:disabled) { background: rgba(30, 110, 55, 0.22); }
+
+.btn-notif:disabled {
+  opacity: 0.55;
+  cursor: default;
+}
+
 /* ── Hero ── */
 .hero-section { margin-bottom: 36px; }
 
