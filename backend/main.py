@@ -1,6 +1,5 @@
 import json
 import logging
-import shutil
 import uuid as uuid_module
 from contextlib import asynccontextmanager
 from datetime import date as date_type, datetime, timezone
@@ -17,7 +16,6 @@ from sqlalchemy.orm import Session
 
 from database import get_db, SessionLocal
 from models import User, Cliente, PreferenciaCliente, Localizacao, Campanha, NotificacaoCampanha, Resgate
-# notificacoes.py é usado apenas pelo notificador.py (script local, fora do Docker)
 from schemas import (
     RegisterRequest, LoginRequest, AuthResponse,
     UserProfileResponse, UpdateProfileRequest, ChangePasswordRequest,
@@ -33,39 +31,79 @@ scheduler = BackgroundScheduler(timezone="America/Sao_Paulo")
 
 # ── Helpers de notificação ────────────────────────────────────────────────────
 
-def _clientes_ativos() -> list[dict]:
-    """Retorna [{phone, name}] de todos os clientes ativos (não-admin)."""
-    db = SessionLocal()
-    try:
-        users = db.scalars(
-            select(User).where(User.is_active == True, User.is_admin == False)
-        ).all()
-        return [{"phone": u.phone, "name": u.name} for u in users]
-    finally:
-        db.close()
-
-
 def _executar_disparo(campanha_id: str) -> None:
     """
-    Marca a notificação como 'aguardando_disparo'.
+    Garante que exista um registro em notificacoes_campanha com status
+    'aguardando_disparo' para a campanha indicada.
+
+    Regras:
+      - Se já existe uma notificação 'pendente'  → muda para 'aguardando_disparo'.
+      - Se já existe 'aguardando_disparo'         → não faz nada (notificador.py vai pegar).
+      - Se não existe 'pendente' nem 'aguardando' → cria um novo registro manual.
+      - 'enviando' / 'enviada'                    → cria novo registro para re-envio.
+
     O envio real é feito pelo notificador.py rodando na máquina local (fora do Docker),
     pois pywhatkit precisa de browser e WhatsApp Web ativos.
     """
+    logger.info(f"[DISPARO] Iniciando _executar_disparo para campanha {campanha_id}")
     db = SessionLocal()
     try:
-        uid   = uuid_module.UUID(campanha_id)
+        uid = uuid_module.UUID(campanha_id)
+
+        # Verifica se já está na fila
+        ja_na_fila = db.scalar(
+            select(NotificacaoCampanha).where(
+                NotificacaoCampanha.id_campanha == uid,
+                NotificacaoCampanha.status.in_(["aguardando_disparo", "enviando"]),
+            )
+        )
+        if ja_na_fila:
+            logger.info(
+                f"[DISPARO] Campanha {campanha_id} já possui notificação "
+                f"com status='{ja_na_fila.status}' (id={ja_na_fila.id}). Nada a fazer."
+            )
+            return
+
+        # Tenta reaproveitar registro pendente
         notif = db.scalar(
             select(NotificacaoCampanha).where(
                 NotificacaoCampanha.id_campanha == uid,
                 NotificacaoCampanha.status == "pendente",
             )
         )
+
         if notif:
+            logger.info(
+                f"[DISPARO] Notificação pendente encontrada (id={notif.id}). "
+                f"Marcando como aguardando_disparo."
+            )
             notif.status = "aguardando_disparo"
-            db.commit()
-            logger.info(f"[NOTIF] Campanha {campanha_id} marcada como aguardando_disparo.")
+        else:
+            # Nenhuma pendente — cria novo registro (re-disparo manual)
+            campanha_obj = db.scalar(select(Campanha).where(Campanha.id == uid))
+            if not campanha_obj:
+                logger.error(f"[DISPARO] Campanha {campanha_id} não encontrada no banco.")
+                return
+
+            notif = NotificacaoCampanha(
+                id_campanha=uid,
+                tipo="manual",
+                status="aguardando_disparo",
+            )
+            db.add(notif)
+            logger.info(
+                f"[DISPARO] Nenhuma notificação pendente. "
+                f"Criando novo registro manual para campanha '{campanha_obj.nome}'."
+            )
+
+        db.commit()
+        logger.info(
+            f"[DISPARO] Campanha {campanha_id} marcada como aguardando_disparo "
+            f"(notif_id={notif.id}). notificador.py deve disparar em breve."
+        )
+
     except Exception as exc:
-        logger.exception(f"[NOTIF] Erro ao marcar disparo: {exc}")
+        logger.exception(f"[DISPARO] Erro inesperado ao marcar disparo para {campanha_id}: {exc}")
     finally:
         db.close()
 
@@ -625,23 +663,45 @@ def notificar_campanha_manual(
     db: Session = Depends(get_db),
 ):
     """Dispara manualmente a notificação WhatsApp de uma campanha."""
+    logger.info(
+        f"[API /notificar] Solicitação recebida — campanha_id={campanha_id} "
+        f"user={current_user.email} is_admin={current_user.is_admin}"
+    )
+
     if not current_user.is_admin:
+        logger.warning(
+            f"[API /notificar] Acesso negado para user={current_user.email} (não é admin)."
+        )
         raise HTTPException(status_code=403, detail="Acesso restrito a administradores.")
 
     try:
         uid = uuid_module.UUID(campanha_id)
     except ValueError:
+        logger.warning(f"[API /notificar] campanha_id inválido: {campanha_id!r}")
         raise HTTPException(status_code=400, detail="ID inválido.")
 
     campanha = db.scalar(select(Campanha).where(Campanha.id == uid))
     if not campanha:
+        logger.warning(f"[API /notificar] Campanha não encontrada: {campanha_id}")
         raise HTTPException(status_code=404, detail="Campanha não encontrada.")
 
-    if _compute_status(campanha) == "encerrada":
+    status_atual = _compute_status(campanha)
+    logger.info(
+        f"[API /notificar] Campanha encontrada: nome='{campanha.nome}' "
+        f"status={status_atual} tipo_notificacao={campanha.tipo_notificacao}"
+    )
+
+    if status_atual == "encerrada":
+        logger.warning(
+            f"[API /notificar] Bloqueado — campanha '{campanha.nome}' está encerrada."
+        )
         raise HTTPException(status_code=400, detail="Não é possível notificar uma campanha encerrada.")
 
+    logger.info(
+        f"[API /notificar] Enfileirando disparo em background para campanha '{campanha.nome}'."
+    )
     background_tasks.add_task(_executar_disparo, str(campanha.id))
-    return {"message": "Disparo iniciado em background."}
+    return {"message": f"Disparo enfileirado para '{campanha.nome}'. O notificador.py irá processar em breve."}
 
 
 @app.get("/api/campanhas", response_model=list[CampanhaResponse])

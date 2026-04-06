@@ -31,6 +31,99 @@ function notifLabel(tipo, agendado_para) {
   return 'Agendada';
 }
 
+// ── Status de notificações ────────────────────────────────────────────────────
+
+const STATUS_LABEL = {
+  pendente:           { label: 'Pendente',           cls: 'ns-pendente'   },
+  aguardando_disparo: { label: 'Aguardando disparo', cls: 'ns-aguardando' },
+  enviando:           { label: 'Enviando…',          cls: 'ns-enviando'   },
+  enviada:            { label: 'Enviada',             cls: 'ns-enviada'    },
+};
+
+function renderNotifStatus(notificacoes) {
+  const wrap = document.getElementById('notifStatusWrap');
+  if (!wrap) return;
+
+  if (!notificacoes || notificacoes.length === 0) {
+    wrap.innerHTML = '<p class="ns-empty">Nenhuma notificação registrada.</p>';
+    return;
+  }
+
+  const rows = notificacoes.map(n => {
+    const s = STATUS_LABEL[n.status] || { label: n.status, cls: 'ns-pendente' };
+    const criadoEm = new Date(n.criado_em).toLocaleString('pt-BR');
+    const enviadoEm = n.enviado_em
+      ? new Date(n.enviado_em).toLocaleString('pt-BR')
+      : '—';
+    return `
+      <div class="ns-row">
+        <span class="ns-badge ${s.cls}">${s.label}</span>
+        <span class="ns-meta">Tipo: <strong>${n.tipo}</strong></span>
+        <span class="ns-meta">Criado: ${criadoEm}</span>
+        <span class="ns-meta">Enviado: ${enviadoEm}</span>
+      </div>`;
+  }).join('');
+
+  wrap.innerHTML = rows;
+}
+
+function setNotifLog(msg, tipo = 'info') {
+  const el = document.getElementById('notifLog');
+  if (!el) return;
+  el.textContent = msg;
+  el.className   = `notif-log notif-log--${tipo}`;
+  el.style.display = msg ? '' : 'none';
+}
+
+async function dispararNotificacao(c) {
+  if (!confirm(`Enviar notificação WhatsApp para todos os clientes sobre "${c.nome}"?\n\nO notificador.py precisa estar rodando na sua máquina.`)) return;
+
+  const btnNotificar = document.getElementById('btnNotificar');
+  btnNotificar.disabled    = true;
+  btnNotificar.textContent = 'Enfileirando…';
+  setNotifLog('Enviando solicitação ao servidor…', 'info');
+
+  const token = localStorage.getItem('aromap_token');
+  let r;
+  try {
+    r = await fetch(`/api/campanhas/${c.id}/notificar`, {
+      method:  'POST',
+      headers: token ? { Authorization: `Bearer ${token}` } : {},
+    });
+  } catch (err) {
+    btnNotificar.disabled    = false;
+    btnNotificar.textContent = 'Enviar notificação';
+    setNotifLog(`Erro de rede: ${err.message}`, 'erro');
+    return;
+  }
+
+  const data = await r.json().catch(() => ({}));
+
+  if (r.ok) {
+    btnNotificar.textContent = 'Disparado ✓';
+    setNotifLog(
+      `Disparo enfileirado com sucesso. O notificador.py irá enviar as mensagens em breve.\n` +
+      `Status atual no banco: aguardando_disparo.\n` +
+      `Aguarde ~10 segundos e recarregue a página para ver o status atualizado.`,
+      'ok'
+    );
+    // Recarrega painel de notificações após 12s para refletir status do notificador
+    setTimeout(async () => {
+      const res2 = await fetch(`/api/campanhas/${c.id}`).catch(() => null);
+      if (res2 && res2.ok) {
+        const c2 = await res2.json();
+        renderNotifStatus(c2.notificacoes);
+      }
+    }, 12000);
+  } else {
+    btnNotificar.disabled    = false;
+    btnNotificar.textContent = 'Enviar notificação';
+    setNotifLog(`Erro ${r.status}: ${data.detail || 'Falha ao disparar notificação.'}`, 'erro');
+  }
+}
+
+// ── Carregamento ──────────────────────────────────────────────────────────────
+
 async function loadDetalhe() {
   const id = new URLSearchParams(window.location.search).get('id');
   if (!id) {
@@ -91,39 +184,17 @@ async function loadDetalhe() {
       );
     }
 
-    // Botão notificar (apenas para campanha manual e não encerrada)
+    // Botão notificar — disponível para qualquer campanha não encerrada
     const btnNotificar = document.getElementById('btnNotificar');
     if (btnNotificar) {
-      const temNotifPendente = c.notificacoes.some(n => n.status === 'pendente');
-      const podeNotificar    = c.tipo_notificacao === 'manual'
-                             && c.status !== 'encerrada'
-                             && temNotifPendente;
-
-      if (podeNotificar) {
+      if (c.status !== 'encerrada') {
         btnNotificar.style.display = '';
-        btnNotificar.addEventListener('click', async () => {
-          if (!confirm(`Enviar notificação WhatsApp para todos os clientes sobre "${c.nome}"?`)) return;
-
-          btnNotificar.disabled    = true;
-          btnNotificar.textContent = 'Enviando...';
-
-          const token = localStorage.getItem('aromap_token');
-          const r = await fetch(`/api/campanhas/${c.id}/notificar`, {
-            method:  'POST',
-            headers: token ? { Authorization: `Bearer ${token}` } : {},
-          });
-
-          if (r.ok) {
-            btnNotificar.textContent = 'Disparado ✓';
-          } else {
-            btnNotificar.disabled    = false;
-            btnNotificar.textContent = 'Enviar notificação';
-            const err = await r.json().catch(() => ({}));
-            alert(err.detail || 'Erro ao disparar notificação.');
-          }
-        });
+        btnNotificar.addEventListener('click', () => dispararNotificacao(c));
       }
     }
+
+    // Painel de status de notificações
+    renderNotifStatus(c.notificacoes);
 
     // Botão encerrar
     const btnEncerrar = document.getElementById('btnEncerrar');
