@@ -132,7 +132,8 @@ def _recarregar_agendamentos() -> None:
     """
     db = SessionLocal()
     try:
-        agora = datetime.now(timezone.utc)
+        import zoneinfo
+        agora = datetime.now(zoneinfo.ZoneInfo("America/Sao_Paulo"))
         pendentes = db.scalars(
             select(NotificacaoCampanha).where(
                 NotificacaoCampanha.tipo == "agendada",
@@ -587,7 +588,12 @@ async def create_campanha(
     notif_agendada = None
     if tipo_notificacao == "agendada" and notificacao_agendada_em and notificacao_agendada_em.strip():
         try:
-            notif_agendada = datetime.fromisoformat(notificacao_agendada_em.strip())
+            dt = datetime.fromisoformat(notificacao_agendada_em.strip())
+            # Garante timezone-aware usando horário local de São Paulo
+            if dt.tzinfo is None:
+                import zoneinfo
+                dt = dt.replace(tzinfo=zoneinfo.ZoneInfo("America/Sao_Paulo"))
+            notif_agendada = dt
         except ValueError:
             raise HTTPException(status_code=400, detail="notificacao_agendada_em inválido.")
 
