@@ -222,16 +222,15 @@ def enviar_texto(phone: str, mensagem: str) -> bool:
         return False
 
 
-def enviar_imagem(phone: str, imagem_url: str, caption: str) -> bool:
+def enviar_imagem(phone: str, b64: str, mime: str, caption: str, filename: str) -> bool:
     """
-    Envia imagem com legenda via Evolution API.
-    imagem_url: URL pública ou caminho local convertido para base64.
+    Envia imagem com legenda via Evolution API usando base64 puro.
     """
     numero = re.sub(r"\D", "", phone)
     if not numero.startswith("55"):
         numero = "55" + numero
 
-    logger.debug(f"[EVO] Enviando imagem para {numero}")
+    logger.debug(f"[EVO] Enviando imagem para {numero} ({mime}, {len(b64)} chars b64)")
     try:
         resp = _evo_post(
             f"/message/sendMedia/{EVOLUTION_INSTANCE}",
@@ -239,9 +238,10 @@ def enviar_imagem(phone: str, imagem_url: str, caption: str) -> bool:
                 "number": numero,
                 "mediaMessage": {
                     "mediatype": "image",
-                    "mimetype": "image/jpeg",
-                    "media": imagem_url,
+                    "mimetype": mime,
+                    "media": b64,
                     "caption": caption,
+                    "fileName": filename,
                 },
             },
         )
@@ -251,8 +251,7 @@ def enviar_imagem(phone: str, imagem_url: str, caption: str) -> bool:
     except requests.exceptions.HTTPError as e:
         body = e.response.text if e.response else ""
         logger.warning(
-            f"[EVO] Falha ao enviar imagem para {numero} (HTTP {e.response.status_code if e.response else '?'}): {body}. "
-            f"Tentando enviar só texto..."
+            f"[EVO] Falha ao enviar imagem para {numero}: {body}. Tentando só texto..."
         )
         return False
     except Exception as e:
@@ -293,18 +292,21 @@ def caminho_imagem_local(imagem_path: str | None) -> str | None:
         return None
 
 
-def imagem_para_base64(caminho: str) -> str | None:
-    """Converte arquivo local para data URI base64 para envio via Evolution API."""
+def imagem_para_base64(caminho: str) -> tuple[str, str] | tuple[None, None]:
+    """
+    Converte arquivo local para base64 puro (sem prefixo data URI).
+    Retorna (base64_string, mimetype) ou (None, None) em falha.
+    """
     import base64
     import mimetypes
     try:
         mime = mimetypes.guess_type(caminho)[0] or "image/jpeg"
         with open(caminho, "rb") as f:
             data = base64.b64encode(f.read()).decode()
-        return f"data:{mime};base64,{data}"
+        return data, mime
     except Exception as e:
         logger.warning(f"[NOTIF] Falha ao converter imagem para base64 ({caminho}): {e}")
-        return None
+        return None, None
 
 
 # ── Lógica de envio ───────────────────────────────────────────────────────────
@@ -330,13 +332,19 @@ def enviar_campanha(db, campanha: SimpleNamespace, notif_id) -> None:
 
     # Prepara imagem se disponível
     img_b64 = None
+    img_mime = None
+    img_filename = None
     if campanha.imagem_path:
         local = caminho_imagem_local(campanha.imagem_path)
         if local:
-            img_b64 = imagem_para_base64(local)
-            logger.info(f"[CAMPANHA] Imagem encontrada e convertida: {local}")
+            img_b64, img_mime = imagem_para_base64(local)
+            img_filename = Path(local).name
+            if img_b64:
+                logger.info(f"[CAMPANHA] Imagem convertida para base64: {local} ({img_mime})")
+            else:
+                logger.warning(f"[CAMPANHA] Falha ao converter imagem: {local}")
         else:
-            logger.warning(f"[CAMPANHA] Imagem referenciada não existe localmente: {campanha.imagem_path}")
+            logger.warning(f"[CAMPANHA] Imagem não encontrada localmente: {campanha.imagem_path}")
 
     enviados = 0
     falhas   = 0
@@ -349,7 +357,7 @@ def enviar_campanha(db, campanha: SimpleNamespace, notif_id) -> None:
 
         sucesso = False
         if img_b64:
-            sucesso = enviar_imagem(cliente.phone, img_b64, mensagem)
+            sucesso = enviar_imagem(cliente.phone, img_b64, img_mime, mensagem, img_filename)
             if not sucesso:
                 logger.info(f"[ENVIO] Fallback para texto para {cliente.phone}")
                 sucesso = enviar_texto(cliente.phone, mensagem)

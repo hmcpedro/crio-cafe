@@ -1,5 +1,6 @@
 import json
 import logging
+import shutil
 import uuid as uuid_module
 from contextlib import asynccontextmanager
 from datetime import date as date_type, datetime, timezone
@@ -512,12 +513,6 @@ async def create_campanha(
 ):
     if not current_user.is_admin:
         raise HTTPException(status_code=403, detail="Acesso restrito a administradores.")
-
-    # DEBUG — remover após diagnóstico
-    import sys
-    print(f"[DEBUG] tipo_desconto recebido: {repr(tipo_desconto)}", file=sys.stderr, flush=True)
-    print(f"[DEBUG] valor_desconto recebido: {repr(valor_desconto)}", file=sys.stderr, flush=True)
-    print(f"[DEBUG] tipo_notificacao recebido: {repr(tipo_notificacao)}", file=sys.stderr, flush=True)
 
     # Normalização e aliases para tipo_desconto
     _tipo_desconto_aliases = {
