@@ -1,0 +1,71 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Aromap - Ofertas</title>
+  <link rel="stylesheet" href="/static/css/home.css" />
+  <link rel="stylesheet" href="/static/css/ofertas.css" />
+</head>
+<body>
+  <div class="page-shell">
+    <div class="page-paper">
+
+      <header class="topbar">
+        <div class="brand-wrap">
+          <img src="/static/img/logo-aromap.png" alt="Aromap" class="brand-logo" />
+        </div>
+        <nav class="topnav">
+          <a href="/home">Início</a>
+          <a href="#" class="active">Ofertas</a>
+          <a href="/perfil">Meu perfil</a>
+          <button class="notif-btn" aria-label="Notificações">
+            <span class="notif-icon">🔔</span>
+            <span class="notif-badge">1</span>
+          </button>
+        </nav>
+      </header>
+
+      <main class="content">
+
+        <!-- Filtros -->
+        <section class="filter-section">
+          <div class="filter-header">
+            <h1>Ofertas</h1>
+            <p>Promoções disponíveis perto de você agora</p>
+          </div>
+
+          <div class="filter-bar">
+            <button class="filter-chip active" data-filter="all">Todas</button>
+            <button class="filter-chip" data-filter="active">Ativas agora</button>
+            <button class="filter-chip" data-filter="scheduled">Agendadas</button>
+            <button class="filter-chip" data-filter="vilamariana">Vila Mariana</button>
+            <button class="filter-chip" data-filter="jardimpaulista">Jardim Paulista</button>
+          </div>
+
+          <div class="filter-divider"></div>
+        </section>
+
+        <!-- Grid de ofertas -->
+        <section class="offers-section">
+          <div class="offers-grid-full" id="offersGrid">
+            <!-- preenchido dinamicamente por ofertas.js -->
+          </div>
+
+          <p class="no-results" id="noResults" style="display:none;">
+            Nenhuma oferta encontrada para este filtro.
+          </p>
+        </section>
+      </main>
+
+      <footer class="page-footer">
+        <div class="footer-line"></div>
+        <img src="/static/img/logo-aromap.png" alt="Aromap" class="footer-logo" />
+        <a href="/perfil" class="preferences-link">Editar preferências</a>
+      </footer>
+    </div>
+  </div>
+
+  <script src="/static/js/ofertas.js?v=3"></script>
+</body>
+</html>

@@ -1,0 +1,65 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Aromap - Campanhas</title>
+  <link rel="stylesheet" href="/static/css/admin-campanhas.css" />
+</head>
+<body>
+  <div class="page-shell">
+    <div class="page-paper">
+
+      <header class="topbar">
+        <div class="brand-wrap">
+          <img src="/static/img/logo-aromap.png" alt="Aromap" class="brand-logo" />
+        </div>
+        <nav class="topnav">
+          <a href="/admin">Home</a>
+          <a href="/admin/campanhas" class="active">Campanhas</a>
+          <a href="/admin/relatorios">Relatórios</a>
+          <a href="/login">Sair</a>
+        </nav>
+      </header>
+
+      <main class="admin-main">
+
+        <section class="page-header">
+          <div class="page-header-left">
+            <h1>Campanhas</h1>
+            <p>Gerencie todas as campanhas promocionais</p>
+          </div>
+          <a href="/admin/nova-campanha" class="btn-primary">+ Nova Campanha</a>
+        </section>
+
+        <div class="page-divider"></div>
+
+        <section class="filter-section">
+          <div class="filter-bar">
+            <button class="filter-chip active" data-filter="all">Todas</button>
+            <button class="filter-chip" data-filter="ativa">Ativas</button>
+            <button class="filter-chip" data-filter="agendada">Agendadas</button>
+            <button class="filter-chip" data-filter="encerrada">Encerradas</button>
+          </div>
+        </section>
+
+        <section class="campaigns-grid" id="campaignsGrid">
+          <!-- preenchido dinamicamente por admin-campanhas.js -->
+        </section>
+
+        <p class="no-results" id="noResults" style="display:none;">
+          Nenhuma campanha encontrada para este filtro.
+        </p>
+
+      </main>
+
+      <footer class="page-footer">
+        <div class="footer-line"></div>
+        <img src="/static/img/logo-aromap.png" alt="Aromap" class="footer-logo" />
+      </footer>
+    </div>
+  </div>
+
+  <script src="/static/js/admin-campanhas.js"></script>
+</body>
+</html>

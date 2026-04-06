@@ -27,6 +27,11 @@
         <label for="confirmPassword">Confirmar senha</label>
         <input type="password" id="confirmPassword" required>
 
+        <label class="location-consent">
+          <input type="checkbox" id="permitirLocalizacao" />
+          <span>Permitir que o Aromap use minha localização para enviar ofertas de unidades próximas a mim</span>
+        </label>
+
         <button type="submit">Cadastrar</button>
       </form>
 
@@ -34,6 +39,8 @@
       <p class="message">Já tem conta? <a href="/login">Entrar</a></p>
     </section>
   </main>
+
+  <img src="/static/img/logo-aromap.png" alt="Aromap" class="logo-bottom" />
 
   <script src="/static/js/cadastro.js"></script>
 </body>

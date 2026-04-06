@@ -1,0 +1,61 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Aromap - Início</title>
+  <link rel="stylesheet" href="/static/css/home.css" />
+</head>
+<body>
+  <div class="page-shell">
+    <div class="page-paper">
+      <header class="topbar">
+        <div class="brand-wrap">
+          <img src="/static/img/logo-aromap.png" alt="Aromap" class="brand-logo" />
+        </div>
+
+        <nav class="topnav">
+          <a href="/home" class="active">Início</a>
+          <a href="/ofertas">Ofertas</a>
+          <a href="/perfil">Meu perfil</a>
+
+          <button class="notif-btn" aria-label="Notificações">
+            <span class="notif-icon">🔔</span>
+            <span class="notif-badge">1</span>
+          </button>
+        </nav>
+      </header>
+
+      <main class="content">
+        <section class="hero-copy">
+          <p class="welcome-greeting">Olá, <span id="userName">...</span></p>
+          <h1>Descubra ofertas perto de você</h1>
+          <p>Promoções ativas para a sua rotina, no momento certo.</p>
+        </section>
+
+        <section class="hero-banner" id="heroBanner">
+          <!-- preenchido dinamicamente por home.js -->
+        </section>
+
+        <section class="offers-section" id="offersSection">
+          <div class="section-title-row">
+            <h3>Ativas agora</h3>
+            <div class="section-line"></div>
+          </div>
+
+          <div class="offers-grid" id="offersGrid">
+            <!-- preenchido dinamicamente por home.js -->
+          </div>
+        </section>
+      </main>
+
+      <footer class="page-footer">
+        <div class="footer-line"></div>
+        <img src="/static/img/logo-aromap.png" alt="Aromap" class="footer-logo" />
+        <a href="/perfil" class="preferences-link">Editar preferências</a>
+      </footer>
+    </div>
+  </div>
+  <script src="/static/js/home.js?v=3"></script>
+</body>
+</html>
