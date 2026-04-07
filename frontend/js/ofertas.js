@@ -200,4 +200,39 @@ function activateFilters() {
   });
 }
 
+// ── Localização ───────────────────────────────────────────────────────────────
+// Mantém a posição atualizada enquanto o usuário navega pelas ofertas
+
+(function iniciarTracking() {
+  const token = getToken();
+  if (!token || !('geolocation' in navigator)) return;
+
+  let lastSent = 0;
+  const INTERVAL_MS = 5 * 60 * 1000;
+
+  function enviar(lat, lon) {
+    const agora = Date.now();
+    if (agora - lastSent < INTERVAL_MS) return;
+    lastSent = agora;
+    fetch('/api/me/localizacao', {
+      method:  'POST',
+      headers: { 'Authorization': `Bearer ${token}`, 'Content-Type': 'application/json' },
+      body:    JSON.stringify({ latitude: lat, longitude: lon }),
+    }).catch(() => {});
+  }
+
+  navigator.geolocation.getCurrentPosition(
+    pos => {
+      enviar(pos.coords.latitude, pos.coords.longitude);
+      navigator.geolocation.watchPosition(
+        p => enviar(p.coords.latitude, p.coords.longitude),
+        () => {},
+        { enableHighAccuracy: true, maximumAge: 60000, timeout: 15000 },
+      );
+    },
+    () => {},
+    { enableHighAccuracy: true, timeout: 15000 },
+  );
+})();
+
 loadOfertas();

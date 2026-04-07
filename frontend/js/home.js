@@ -165,6 +165,68 @@ async function loadCampanhas(token) {
   }
 }
 
+// ── Localização ───────────────────────────────────────────────────────────────
+
+const LOC_INTERVAL_MS  = 5 * 60 * 1000;  // envia a cada 5 minutos no máximo
+let   _locWatchId      = null;
+let   _locLastSent     = 0;
+
+async function enviarLocalizacao(lat, lon, token) {
+  const agora = Date.now();
+  if (agora - _locLastSent < LOC_INTERVAL_MS) return; // evita spam
+  _locLastSent = agora;
+
+  try {
+    const res = await fetch('/api/me/localizacao', {
+      method:  'POST',
+      headers: { 'Authorization': `Bearer ${token}`, 'Content-Type': 'application/json' },
+      body:    JSON.stringify({ latitude: lat, longitude: lon }),
+    });
+    if (res.ok) {
+      console.log(`[Localização] Enviada: ${lat.toFixed(5)}, ${lon.toFixed(5)}`);
+    } else {
+      console.warn('[Localização] Falha ao enviar:', res.status);
+    }
+  } catch (err) {
+    console.warn('[Localização] Erro de rede:', err.message);
+  }
+}
+
+async function ativarPermissaoLocalizacao(token) {
+  try {
+    await fetch('/api/me/permissao-localizacao?permitir=true', {
+      method:  'PATCH',
+      headers: { 'Authorization': `Bearer ${token}` },
+    });
+  } catch { /* silencioso */ }
+}
+
+function iniciarTracking(token) {
+  if (!('geolocation' in navigator)) {
+    console.info('[Localização] Geolocation não suportado neste browser.');
+    return;
+  }
+
+  navigator.geolocation.getCurrentPosition(
+    async pos => {
+      await ativarPermissaoLocalizacao(token);
+      await enviarLocalizacao(pos.coords.latitude, pos.coords.longitude, token);
+
+      // Continua atualizando enquanto a página estiver aberta
+      _locWatchId = navigator.geolocation.watchPosition(
+        pos => enviarLocalizacao(pos.coords.latitude, pos.coords.longitude, token),
+        err => console.info('[Localização] watchPosition erro:', err.message),
+        { enableHighAccuracy: true, maximumAge: 60000, timeout: 15000 },
+      );
+    },
+    err => {
+      // Usuário negou ou não tem GPS — não bloqueia nada no sistema
+      console.info('[Localização] Permissão negada ou indisponível:', err.message);
+    },
+    { enableHighAccuracy: true, timeout: 15000 },
+  );
+}
+
 // ── Init ──────────────────────────────────────────────────────────────────────
 
 (async function () {
@@ -204,6 +266,9 @@ async function loadCampanhas(token) {
   } catch (err) {
     console.error('Erro ao carregar usuário:', err);
   }
+
+  // Inicia tracking de localização (pede permissão ao browser)
+  iniciarTracking(token);
 
   loadCampanhas(token);
 })();

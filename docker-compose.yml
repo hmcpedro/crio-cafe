@@ -51,7 +51,6 @@ services:
       - .env
     environment:
       POSTGRES_HOST: postgres
-      DISPLAY: ":99"        # necessário para pywhatkit/WhatsApp Web via Xvfb
     ports:
       - "8000:8000"
     volumes:
@@ -62,6 +61,25 @@ services:
     depends_on:
       postgres:
         condition: service_healthy
+
+  notificador:
+    build: .
+    container_name: aromap-notificador
+    restart: unless-stopped
+    env_file:
+      - .env
+    environment:
+      POSTGRES_HOST: postgres
+      EVOLUTION_API_URL: http://evolution:8080
+    volumes:
+      - ./backend/uploads:/app/backend/uploads
+    working_dir: /app
+    command: python notificador.py
+    depends_on:
+      postgres:
+        condition: service_healthy
+      evolution:
+        condition: service_started
 
 volumes:
   postgres_data:
