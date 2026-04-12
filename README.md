@@ -21,20 +21,40 @@ Com essa solucao, a Crio Cafe pode tornar suas acoes promocionais mais inteligen
 
 ## Instruções de Uso
 
+### Resumo rápido (3 comandos)
+
+Para subir tudo do zero e expor a aplicação remotamente, basta executar em sequência:
+
+```bash
+# 1. Recriar e subir todos os containers
+docker compose down -v && docker compose up --build -d
+
+# 2. Criar a instância do WhatsApp no notificador (dentro do Docker)
+docker compose exec notificador python /app/notificador.py --criar-instancia
+
+# 3. Expor a aplicação remotamente via Cloudflare Tunnel
+cloudflared tunnel --url http://localhost:8000
+```
+
+O terceiro comando gera uma URL pública (ex: `https://xxxx.trycloudflare.com`) que pode ser usada para acessar a aplicação via HTTP de qualquer lugar.
+
+---
+
 ### 1. Subir os serviços
 
 ```bash
-docker compose up -d
+docker compose down -v && docker compose up --build -d
 ```
 
-Isso sobe três containers:
+Isso reconstrói as imagens e sobe os containers:
 - `aromap-postgres` — banco de dados
 - `aromap-backend` — API FastAPI na porta 8000
 - `aromap-evolution` — Evolution API (gateway WhatsApp) na porta 8080
+- `notificador` — processo que monitora o banco e envia as notificações
 
 ### 2. Acessar o sistema
 
-Acesse: http://127.0.0.1:8000/login
+Localmente: http://127.0.0.1:8000/login
 
 Credenciais de admin:
 ```
@@ -46,21 +66,20 @@ senha: admin
 
 O módulo de notificações usa a **Evolution API** para enviar mensagens via WhatsApp. É necessário vincular um número uma única vez.
 
-**a) Acesse o manager da Evolution API:**
+**a) Crie a instância `aromap` via terminal (dentro do Docker):**
+```bash
+docker compose exec notificador python /app/notificador.py --criar-instancia
+```
+
+**b) Acesse o manager da Evolution API:**
 ```
 http://localhost:8080/manager
 ```
 A senha de acesso é o valor de `EVOLUTION_API_KEY` definido no `.env` (padrão: `aromap-evolution-key-2025`).
 
-**b) Se a instância `aromap` ainda não existir, crie via terminal:**
-```bash
-source venv/bin/activate
-python notificador.py --criar-instancia
-```
-
 **c) Gere o QR Code:**
 ```bash
-python notificador.py --qr
+docker compose exec notificador python /app/notificador.py --qr
 ```
 
 No manager, clique na instância `aromap` — o QR Code aparecerá na tela. Escaneie com o WhatsApp do celular em:
@@ -70,26 +89,33 @@ No manager, clique na instância `aromap` — o QR Code aparecerá na tela. Esca
 
 **d) Verifique se conectou:**
 ```bash
-python notificador.py --status
+docker compose exec notificador python /app/notificador.py --status
 ```
 Deve exibir `state='open'`.
 
 A sessão fica salva no volume Docker `evolution_data`. Não é necessário repetir esse processo após reiniciar — só se o WhatsApp desconectar.
 
-### 4. Rodar o notificador
+### 4. O notificador
 
-O `notificador.py` é um processo separado que fica observando o banco a cada 10 segundos. Quando uma campanha é marcada para disparo, ele envia as mensagens para todos os clientes ativos.
+O `notificador.py` roda automaticamente dentro do container `notificador` e fica observando o banco a cada 10 segundos. Quando uma campanha é marcada para disparo, ele envia as mensagens para todos os clientes ativos.
+
+Não é necessário iniciá-lo manualmente — ele já sobe junto com o `docker compose up`.
+
+### 5. Expor a aplicação remotamente (Cloudflare Tunnel)
+
+Para receber requisições HTTP externas (ex: webhooks, acesso remoto), rode em um terminal separado:
 
 ```bash
-source venv/bin/activate
-python notificador.py
+cloudflared tunnel --url http://localhost:8000
 ```
 
-Deixe esse terminal aberto enquanto quiser que as notificações funcionem. Os logs também são gravados em `notificador.log`.
+O comando gera uma URL pública temporária válida enquanto o terminal estiver aberto. Use essa URL no lugar de `localhost:8000` para acessos externos.
 
-### 5. Criar e disparar campanhas
+> Requer o `cloudflared` instalado: https://developers.cloudflare.com/cloudflare-one/connections/connect-networks/downloads/
 
-1. Acesse http://localhost:8000/admin/campanhas
+### 6. Criar e disparar campanhas
+
+1. Acesse http://localhost:8000/admin/campanhas (ou pela URL do Cloudflare)
 2. Crie uma campanha — escolha o tipo de notificação:
    - **Imediata** — enfileira o disparo assim que salvar
    - **Agendada** — dispara na data/hora escolhida
@@ -102,4 +128,3 @@ Deixe esse terminal aberto enquanto quiser que as notificações funcionem. Os l
 - Os clientes precisam ter número de telefone cadastrado no sistema
 - O número pode estar salvo com ou sem o código do país (`11999999999` ou `5511999999999`)
 - Se o envio de imagem falhar, o sistema faz fallback automático e envia só o texto
-- Para reinstalar dependências locais: `pip install requests sqlalchemy psycopg[binary] python-dotenv`
