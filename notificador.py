@@ -53,6 +53,18 @@ UPLOADS_DIR  = Path(__file__).parent / "backend" / "uploads"
 POLL_INTERVAL = 10   # segundos entre verificações
 PAUSA_MSGS    = 3    # segundos entre mensagens consecutivas
 
+# ── Configuração de proximidade ───────────────────────────────────────────────
+
+RAIO_METROS   = float(os.getenv("RAIO_PROXIMIDADE_METROS", "3000"))
+
+# Coordenadas das unidades: slug → (lat, lon)
+UNIDADES_COORDS: dict[str, tuple[float, float]] = {
+    "vila-mariana":    (float(os.getenv("UNIDADE_VILA_MARIANA_LAT",    "-23.5916")),
+                        float(os.getenv("UNIDADE_VILA_MARIANA_LON",    "-46.6322"))),
+    "jardim-paulista": (float(os.getenv("UNIDADE_JARDIM_PAULISTA_LAT", "-23.6809995")),
+                        float(os.getenv("UNIDADE_JARDIM_PAULISTA_LON", "-46.6639466"))),
+}
+
 # ── Logging ───────────────────────────────────────────────────────────────────
 
 logging.basicConfig(
@@ -280,6 +292,69 @@ def montar_mensagem(nome_cliente: str, campanha_nome: str, descricao: str,
     return msg
 
 
+# ── Proximidade ──────────────────────────────────────────────────────────────
+
+def haversine_metros(lat1: float, lon1: float, lat2: float, lon2: float) -> float:
+    """Distância em metros entre dois pontos (lat/lon) via fórmula de Haversine."""
+    import math
+    R = 6_371_000  # raio da Terra em metros
+    p = math.pi / 180
+    a = (math.sin((lat2 - lat1) * p / 2) ** 2
+         + math.cos(lat1 * p) * math.cos(lat2 * p)
+         * math.sin((lon2 - lon1) * p / 2) ** 2)
+    return 2 * R * math.asin(math.sqrt(a))
+
+
+def cliente_esta_proximo(db, cliente_id: str, unidades_campanha: list[str]) -> tuple[bool, str]:
+    """
+    Verifica se a última localização registrada do cliente está dentro de
+    RAIO_METROS de pelo menos uma das unidades da campanha.
+
+    Retorna (deve_enviar: bool, motivo: str).
+
+    Regras:
+    - Se o cliente não tem nenhuma localização registrada → envia (benefício da dúvida)
+    - Caso contrário, usa sempre o registro mais recente, independente de quando foi
+    - Se está dentro do raio de alguma unidade → envia
+    - Se está fora de todas as unidades → NÃO envia
+    """
+    row = db.execute(
+        text("""
+            SELECT latitude, longitude, registrado_em
+            FROM localizacao
+            WHERE id_cliente = :id
+            ORDER BY registrado_em DESC
+            LIMIT 1
+        """),
+        {"id": str(cliente_id)},
+    ).fetchone()
+
+    if row is None:
+        return True, "sem localização registrada (fallback: envia)"
+
+    lat_cli = float(row.latitude)
+    lon_cli = float(row.longitude)
+    reg_em  = row.registrado_em.strftime("%d/%m/%Y %H:%M") if row.registrado_em else "?"
+
+    # Define quais unidades verificar
+    if not unidades_campanha:
+        alvos = list(UNIDADES_COORDS.items())
+    else:
+        alvos = [(slug, coords) for slug, coords in UNIDADES_COORDS.items()
+                 if slug in unidades_campanha]
+
+    for slug, (lat_u, lon_u) in alvos:
+        dist = haversine_metros(lat_cli, lon_cli, lat_u, lon_u)
+        if dist <= RAIO_METROS:
+            return True, f"dentro do raio ({dist:.0f}m ≤ {RAIO_METROS:.0f}m — unidade: {slug}, última loc: {reg_em})"
+
+    distancias = ", ".join(
+        f"{slug}={haversine_metros(lat_cli, lon_cli, lat_u, lon_u):.0f}m"
+        for slug, (lat_u, lon_u) in (alvos or list(UNIDADES_COORDS.items()))
+    )
+    return False, f"fora do raio (última loc: {reg_em}) — distâncias: {distancias}"
+
+
 def caminho_imagem_local(imagem_path: str | None) -> str | None:
     """'/uploads/campanhas/uuid.png' → caminho absoluto local."""
     if not imagem_path:
@@ -314,16 +389,34 @@ def imagem_para_base64(caminho: str) -> tuple[str, str] | tuple[None, None]:
 def enviar_campanha(db, campanha: SimpleNamespace, notif_id) -> None:
     logger.info(f"[CAMPANHA] Iniciando envio da campanha '{campanha.nome}' (notif_id={notif_id})")
 
-    clientes = db.execute(
-        text("SELECT name, phone FROM users WHERE is_active = TRUE AND is_admin = FALSE")
+    todos_clientes = db.execute(
+        text("SELECT id, name, phone FROM users WHERE is_active = TRUE AND is_admin = FALSE")
     ).fetchall()
 
-    if not clientes:
+    if not todos_clientes:
         logger.warning("[CAMPANHA] Nenhum cliente ativo encontrado. Marcando como enviada.")
         _atualizar_status(db, notif_id, "enviada")
         return
 
-    logger.info(f"[CAMPANHA] {len(clientes)} cliente(s) elegível(is) para receber a notificação.")
+    logger.info(f"[CAMPANHA] {len(todos_clientes)} cliente(s) ativo(s) — aplicando filtro de proximidade...")
+
+    # Filtro de proximidade
+    unidades = campanha.unidades if campanha.unidades else []
+    clientes = []
+    for c in todos_clientes:
+        deve_enviar, motivo = cliente_esta_proximo(db, c.id, unidades)
+        if deve_enviar:
+            clientes.append(c)
+            logger.info(f"[PROXIMIDADE] ✓ {c.name}: {motivo}")
+        else:
+            logger.info(f"[PROXIMIDADE] ✗ {c.name}: {motivo}")
+
+    if not clientes:
+        logger.warning("[CAMPANHA] Nenhum cliente dentro do raio de proximidade. Marcando como enviada.")
+        _atualizar_status(db, notif_id, "enviada")
+        return
+
+    logger.info(f"[CAMPANHA] {len(clientes)}/{len(todos_clientes)} cliente(s) elegível(is) após filtro de proximidade.")
 
     periodo = periodo_str(campanha.data_inicio, campanha.data_fim)
     horario = None
@@ -416,7 +509,8 @@ def verificar_e_enviar() -> None:
                 SELECT nc.id, nc.id_campanha,
                        c.nome, c.descricao, c.imagem_path,
                        c.data_inicio, c.data_fim,
-                       c.hora_inicio, c.hora_fim
+                       c.hora_inicio, c.hora_fim,
+                       c.unidades
                 FROM notificacoes_campanha nc
                 JOIN campanhas c ON c.id = nc.id_campanha
                 WHERE nc.status = 'aguardando_disparo'
@@ -441,6 +535,7 @@ def verificar_e_enviar() -> None:
                 data_fim    = row.data_fim,
                 hora_inicio = row.hora_inicio,
                 hora_fim    = row.hora_fim,
+                unidades    = row.unidades or [],
             )
 
             try:
@@ -485,12 +580,11 @@ def main() -> None:
         sys.exit(1)
 
     if not verificar_instancia():
-        logger.error(
-            "WhatsApp não conectado. Execute:\n"
-            "  python notificador.py --qr\n"
-            "e escaneie o QR Code no manager."
+        logger.warning(
+            "WhatsApp não conectado. O notificador vai continuar rodando e tentará "
+            "a cada ciclo. Para conectar, execute:\n"
+            "  docker compose exec notificador python /app/notificador.py --qr"
         )
-        sys.exit(1)
 
     logger.info(f"[LOOP] Iniciando polling a cada {POLL_INTERVAL}s. Ctrl+C para encerrar.")
 

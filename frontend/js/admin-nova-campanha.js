@@ -124,7 +124,6 @@ document.getElementById('campaignForm').addEventListener('submit', async e => {
 
   const tipoDescontoEl = document.getElementById('discountType');
   const tipoDescontoVal = tipoDescontoEl ? tipoDescontoEl.value.trim() : '';
-  console.log('[DEBUG] tipo_desconto que será enviado:', JSON.stringify(tipoDescontoVal));
 
   const fd = new FormData();
   fd.append('nome',            document.getElementById('campName').value.trim());
@@ -162,7 +161,6 @@ document.getElementById('campaignForm').addEventListener('submit', async e => {
         : (data.detail || 'Erro ao criar campanha.');
       msg.textContent = detail;
       msg.className   = 'form-message msg-error';
-      console.error('[DEBUG] Erro da API:', data);
       btn.disabled    = false;
       return;
     }

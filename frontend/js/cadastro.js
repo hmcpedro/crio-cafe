@@ -46,9 +46,15 @@ registerForm.addEventListener('submit', async (event) => {
     localStorage.setItem('aromap_token', data.token);
     localStorage.setItem('aromap_name',  data.name);
 
-    // Se o usuário concedeu permissão de localização
+    // Se o usuário concedeu permissão de localização, salva a flag no banco.
+    // As coordenadas serão capturadas pelo home.js após o redirecionamento.
     if (permitirLoc) {
-      await salvarPermissaoLocalizacao(data.token);
+      try {
+        await fetch('/api/me/permissao-localizacao?permitir=true', {
+          method:  'PATCH',
+          headers: { 'Authorization': `Bearer ${data.token}` },
+        });
+      } catch { /* silencioso — home.js tentará novamente */ }
     }
 
     message.textContent = 'Cadastro realizado! Entrando...';
@@ -59,35 +65,3 @@ registerForm.addEventListener('submit', async (event) => {
     console.error(err);
   }
 });
-
-async function salvarPermissaoLocalizacao(token) {
-  try {
-    // Atualiza a flag no banco
-    await fetch('/api/me/permissao-localizacao?permitir=true', {
-      method:  'PATCH',
-      headers: { 'Authorization': `Bearer ${token}` },
-    });
-
-    // Tenta capturar as coordenadas GPS agora
-    if (navigator.geolocation) {
-      navigator.geolocation.getCurrentPosition(
-        async (pos) => {
-          await fetch('/api/me/localizacao', {
-            method:  'POST',
-            headers: {
-              'Content-Type':  'application/json',
-              'Authorization': `Bearer ${token}`,
-            },
-            body: JSON.stringify({
-              latitude:  pos.coords.latitude,
-              longitude: pos.coords.longitude,
-            }),
-          });
-        },
-        () => { /* usuário negou acesso ao GPS — permissão lógica já foi salva */ }
-      );
-    }
-  } catch (err) {
-    console.error('Erro ao salvar permissão de localização:', err);
-  }
-}
