@@ -313,7 +313,7 @@ def cliente_esta_proximo(db, cliente_id: str, unidades_campanha: list[str]) -> t
     Retorna (deve_enviar: bool, motivo: str).
 
     Regras:
-    - Se o cliente não tem nenhuma localização registrada → envia (benefício da dúvida)
+    - Se o cliente não tem nenhuma localização registrada → NÃO envia (localização negada ou ausente)
     - Caso contrário, usa sempre o registro mais recente, independente de quando foi
     - Se está dentro do raio de alguma unidade → envia
     - Se está fora de todas as unidades → NÃO envia
@@ -330,7 +330,7 @@ def cliente_esta_proximo(db, cliente_id: str, unidades_campanha: list[str]) -> t
     ).fetchone()
 
     if row is None:
-        return True, "sem localização registrada (fallback: envia)"
+        return False, "sem localização registrada (localização não permitida — não envia)"
 
     lat_cli = float(row.latitude)
     lon_cli = float(row.longitude)
@@ -466,20 +466,32 @@ def enviar_campanha(db, campanha: SimpleNamespace, notif_id) -> None:
             time.sleep(PAUSA_MSGS)
 
     logger.info(f"[CAMPANHA] '{campanha.nome}' concluída — {enviados} enviadas, {falhas} falhas.")
-    _atualizar_status(db, notif_id, "enviada")
+    _atualizar_status(db, notif_id, "enviada", total_enviados=enviados)
 
 
-def _atualizar_status(db, notif_id, novo_status: str) -> None:
-    db.execute(
-        text(
-            "UPDATE notificacoes_campanha "
-            "SET status = :s, enviado_em = NOW() "
-            "WHERE id = :id"
-        ),
-        {"s": novo_status, "id": str(notif_id)},
-    )
+def _atualizar_status(db, notif_id, novo_status: str, total_enviados: int | None = None) -> None:
+    params: dict = {"s": novo_status, "id": str(notif_id)}
+    if total_enviados is not None:
+        db.execute(
+            text(
+                "UPDATE notificacoes_campanha "
+                "SET status = :s, enviado_em = NOW(), total_enviados = :n "
+                "WHERE id = :id"
+            ),
+            {**params, "n": total_enviados},
+        )
+    else:
+        db.execute(
+            text(
+                "UPDATE notificacoes_campanha "
+                "SET status = :s, enviado_em = NOW() "
+                "WHERE id = :id"
+            ),
+            params,
+        )
     db.commit()
-    logger.debug(f"[DB] Notificação {notif_id} → status='{novo_status}'")
+    logger.debug(f"[DB] Notificação {notif_id} → status='{novo_status}'" +
+                 (f", total_enviados={total_enviados}" if total_enviados is not None else ""))
 
 
 # ── Verificações de startup ───────────────────────────────────────────────────

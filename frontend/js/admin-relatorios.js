@@ -32,14 +32,10 @@ function buildTableRow(c) {
   const badgeClass  = `badge-${c.status}`;
   const rowClass    = c.status === 'encerrada' ? ' class="row-dim"' : '';
 
-  const totalNotifs  = c.notificacoes.length;
-  const enviadas     = c.notificacoes.filter(n => n.status === 'enviada').length;
-  const pendentes    = c.notificacoes.filter(n => n.status === 'pendente').length;
-
-  // Notificações enviadas: se houver enviadas mostra, senão mostra total pendentes entre parênteses
-  const notifDisplay = enviadas > 0
-    ? enviadas
-    : (pendentes > 0 ? `0 <small style="color:#999">(${pendentes} pend.)</small>` : '0');
+  const notificados = c.total_notificados ?? 0;
+  const resgates    = c.total_resgates    ?? 0;
+  const taxa        = notificados > 0 ? ((resgates / notificados) * 100).toFixed(1) + '%' : '—';
+  const taxaPct     = notificados > 0 ? Math.min((resgates / notificados) * 100, 100) : 0;
 
   const fillClass = c.status === 'encerrada' ? ' bar-fill--dim' : '';
 
@@ -50,10 +46,10 @@ function buildTableRow(c) {
       </td>
       <td><span class="${badgeClass}">${statusLabel}</span></td>
       <td>${fmtPeriodoShort(c)}</td>
-      <td>${notifDisplay}</td>
-      <td>—</td>
-      <td>—</td>
-      <td class="td-bar"><div class="bar-track"><div class="bar-fill${fillClass}" style="width:0%"></div></div></td>
+      <td>${notificados}</td>
+      <td>${resgates}</td>
+      <td>${taxa}</td>
+      <td class="td-bar"><div class="bar-track"><div class="bar-fill${fillClass}" style="width:${taxaPct}%"></div></div></td>
     </tr>`;
 }
 
@@ -61,23 +57,22 @@ function buildUnitCard(nome, slug, campanhas) {
   const campanhasDaUnidade = campanhas.filter(c =>
     !c.unidades || c.unidades.length === 0 || c.unidades.includes(slug)
   );
-  const totalNotifs = campanhasDaUnidade.reduce((s, c) => s + c.notificacoes.length, 0);
-  const enviadas    = campanhasDaUnidade.reduce(
-    (s, c) => s + c.notificacoes.filter(n => n.status === 'enviada').length, 0
-  );
-  const ativas      = campanhasDaUnidade.filter(c => c.status === 'ativa').length;
+  const totalNotificados = campanhasDaUnidade.reduce((s, c) => s + (c.total_notificados ?? 0), 0);
+  const totalResgates    = campanhasDaUnidade.reduce((s, c) => s + (c.total_resgates    ?? 0), 0);
+  const ativas           = campanhasDaUnidade.filter(c => c.status === 'ativa').length;
+  const taxaPct          = totalNotificados > 0 ? Math.min((totalResgates / totalNotificados) * 100, 100) : 0;
 
   return `
     <div class="unit-card">
       <h3>${nome}</h3>
       <div class="unit-stats">
         <div class="unit-stat">
-          <strong>${totalNotifs}</strong>
-          <span>Notificações</span>
+          <strong>${totalNotificados}</strong>
+          <span>Notificados</span>
         </div>
         <div class="unit-stat">
-          <strong>${enviadas}</strong>
-          <span>Enviadas</span>
+          <strong>${totalResgates}</strong>
+          <span>Resgates</span>
         </div>
         <div class="unit-stat unit-stat--accent">
           <strong>${ativas}</strong>
@@ -86,7 +81,7 @@ function buildUnitCard(nome, slug, campanhas) {
       </div>
       <div class="unit-bar-wrap">
         <div class="unit-bar-track">
-          <div class="unit-bar-fill" style="width:${Math.min(ativas * 20, 100)}%"></div>
+          <div class="unit-bar-fill" style="width:${taxaPct.toFixed(1)}%"></div>
         </div>
       </div>
     </div>`;
@@ -99,16 +94,14 @@ function render(periodo) {
   const campanhas = campanhasDoPeriodo(_allData, periodo);
 
   // Métricas gerais
-  const ativas       = campanhas.filter(c => c.status === 'ativa').length;
-  const totalNotifs  = campanhas.reduce((s, c) => s + c.notificacoes.length, 0);
-  const enviadas     = campanhas.reduce(
-    (s, c) => s + c.notificacoes.filter(n => n.status === 'enviada').length, 0
-  );
+  const ativas            = campanhas.filter(c => c.status === 'ativa').length;
+  const totalNotificados  = campanhas.reduce((s, c) => s + (c.total_notificados ?? 0), 0);
+  const totalResgates     = campanhas.reduce((s, c) => s + (c.total_resgates    ?? 0), 0);
 
-  document.getElementById('metNotifs').textContent  = totalNotifs;
-  document.getElementById('metEnviadas').textContent = enviadas;
-  document.getElementById('metAtivas').textContent  = ativas;
-  document.getElementById('metTotal').textContent   = campanhas.length;
+  document.getElementById('metNotifs').textContent   = totalNotificados;
+  document.getElementById('metEnviadas').textContent = totalResgates;
+  document.getElementById('metAtivas').textContent   = ativas;
+  document.getElementById('metTotal').textContent    = campanhas.length;
 
   // Tabela
   const tbody = document.getElementById('reportTbody');

@@ -81,6 +81,7 @@ class NotificacaoResponse(BaseModel):
     agendado_para: Optional[str]    # ISO datetime string ou None
     enviado_em: Optional[str]       # ISO datetime string ou None
     status: str                     # pendente | enviada | cancelada
+    total_enviados: int
     criado_em: str
 
 
@@ -89,6 +90,12 @@ class ResgateResponse(BaseModel):
     campanha_id: str
     campanha_nome: str
     campanha_status: str   # ativa | agendada | encerrada
+    resgatado_em: str      # ISO datetime
+
+
+class ResgateDetalhe(BaseModel):
+    id: str
+    usuario_nome: str
     resgatado_em: str      # ISO datetime
 
 
@@ -111,3 +118,5 @@ class CampanhaResponse(BaseModel):
     status: str                     # ativa | agendada | encerrada
     criado_em: str
     notificacoes: List[NotificacaoResponse]
+    total_notificados: int = 0      # soma de total_enviados de todos os disparos
+    total_resgates: int = 0         # quantidade de resgates realizados

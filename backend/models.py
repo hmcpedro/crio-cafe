@@ -132,6 +132,7 @@ class NotificacaoCampanha(Base):
     agendado_para: Mapped[Optional[datetime]] = mapped_column(DateTime, nullable=True)
     enviado_em: Mapped[Optional[datetime]] = mapped_column(DateTime, nullable=True)
     status: Mapped[str] = mapped_column(String(20), nullable=False, default="pendente")
+    total_enviados: Mapped[int] = mapped_column(nullable=False, default=0)
     criado_em: Mapped[datetime] = mapped_column(DateTime, nullable=False, server_default=func.now())
 
     campanha: Mapped["Campanha"] = relationship("Campanha", back_populates="notificacoes")
