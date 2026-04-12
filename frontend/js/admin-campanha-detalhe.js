@@ -122,6 +122,53 @@ async function dispararNotificacao(c) {
   }
 }
 
+// ── Desempenho ────────────────────────────────────────────────────────────────
+
+function renderDesempenho(c) {
+  const notificados = c.total_notificados ?? 0;
+  const resgates    = c.total_resgates    ?? 0;
+  const taxa        = notificados > 0 ? ((resgates / notificados) * 100).toFixed(1) : '0.0';
+
+  document.getElementById('perfNotificados').textContent = notificados;
+  document.getElementById('perfResgates').textContent    = resgates;
+  document.getElementById('perfTaxa').textContent        = `${taxa}%`;
+  document.getElementById('perfElegiveis').textContent   = notificados;
+  document.getElementById('perfBarLabel').textContent    = `${taxa}%`;
+
+  const pct = Math.min(parseFloat(taxa), 100);
+  document.getElementById('perfBarFill').style.width = `${pct}%`;
+}
+
+async function loadResgates(campanhaId) {
+  const token = localStorage.getItem('aromap_token');
+  const list  = document.getElementById('redemptionList');
+  if (!list) return;
+
+  try {
+    const res = await fetch(`/api/campanhas/${campanhaId}/resgates`, {
+      headers: token ? { Authorization: `Bearer ${token}` } : {},
+    });
+    if (!res.ok) return;
+
+    const resgates = await res.json();
+    if (!resgates.length) {
+      list.innerHTML = '<li class="redemption-item redemption-item--more"><span>Nenhum resgate registrado ainda.</span></li>';
+      return;
+    }
+
+    list.innerHTML = resgates.map(r => {
+      const dt = new Date(r.resgatado_em).toLocaleString('pt-BR');
+      return `
+        <li class="redemption-item">
+          <span class="redemption-name">${r.usuario_nome}</span>
+          <span class="redemption-date">${dt}</span>
+        </li>`;
+    }).join('');
+  } catch {
+    // silencia erros de rede — a lista fica com estado padrão
+  }
+}
+
 // ── Carregamento ──────────────────────────────────────────────────────────────
 
 async function loadDetalhe() {
@@ -195,6 +242,10 @@ async function loadDetalhe() {
 
     // Painel de status de notificações
     renderNotifStatus(c.notificacoes);
+
+    // Métricas de desempenho
+    renderDesempenho(c);
+    loadResgates(c.id);
 
     // Botão encerrar
     const btnEncerrar = document.getElementById('btnEncerrar');

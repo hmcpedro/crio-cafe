@@ -12,7 +12,7 @@ from apscheduler.schedulers.background import BackgroundScheduler
 from fastapi import BackgroundTasks, FastAPI, Depends, HTTPException, status, Form, File, UploadFile, Query
 from fastapi.responses import FileResponse, RedirectResponse
 from fastapi.staticfiles import StaticFiles
-from sqlalchemy import select
+from sqlalchemy import select, func as sql_func
 from sqlalchemy.orm import Session
 
 from database import get_db, SessionLocal
@@ -21,7 +21,7 @@ from schemas import (
     RegisterRequest, LoginRequest, AuthResponse,
     UserProfileResponse, UpdateProfileRequest, ChangePasswordRequest,
     PreferenciasResponse, PreferenciasRequest, LocalizacaoRequest,
-    CampanhaResponse, NotificacaoResponse, ResgateResponse,
+    CampanhaResponse, NotificacaoResponse, ResgateResponse, ResgateDetalhe,
 )
 from security import hash_password, verify_password
 from auth import create_access_token, get_current_user
@@ -200,11 +200,12 @@ def _notif_to_schema(n: NotificacaoCampanha) -> NotificacaoResponse:
         agendado_para=n.agendado_para.isoformat() if n.agendado_para else None,
         enviado_em=n.enviado_em.isoformat() if n.enviado_em else None,
         status=n.status,
+        total_enviados=n.total_enviados,
         criado_em=n.criado_em.isoformat(),
     )
 
 
-def _campanha_to_schema(c: Campanha) -> CampanhaResponse:
+def _campanha_to_schema(c: Campanha, total_notificados: int = 0, total_resgates: int = 0) -> CampanhaResponse:
     return CampanhaResponse(
         id=str(c.id),
         nome=c.nome,
@@ -224,6 +225,8 @@ def _campanha_to_schema(c: Campanha) -> CampanhaResponse:
         status=_compute_status(c),
         criado_em=c.criado_em.isoformat(),
         notificacoes=[_notif_to_schema(n) for n in c.notificacoes],
+        total_notificados=total_notificados,
+        total_resgates=total_resgates,
     )
 
 
@@ -710,10 +713,30 @@ def list_campanhas(
     status_filter: Optional[str] = Query(None, alias="status"),
     db: Session = Depends(get_db),
 ):
-    q = select(Campanha).order_by(Campanha.criado_em.desc())
-    campanhas = db.scalars(q).all()
+    campanhas = db.scalars(select(Campanha).order_by(Campanha.criado_em.desc())).all()
 
-    results = [_campanha_to_schema(c) for c in campanhas]
+    # Totais de envios por campanha (soma de total_enviados de todos os disparos)
+    notif_rows = db.execute(
+        select(NotificacaoCampanha.id_campanha, sql_func.sum(NotificacaoCampanha.total_enviados))
+        .group_by(NotificacaoCampanha.id_campanha)
+    ).all()
+    notif_map: dict = {str(row[0]): int(row[1] or 0) for row in notif_rows}
+
+    # Total de resgates por campanha
+    resgate_rows = db.execute(
+        select(Resgate.id_campanha, sql_func.count(Resgate.id))
+        .group_by(Resgate.id_campanha)
+    ).all()
+    resgate_map: dict = {str(row[0]): int(row[1] or 0) for row in resgate_rows}
+
+    results = [
+        _campanha_to_schema(
+            c,
+            total_notificados=notif_map.get(str(c.id), 0),
+            total_resgates=resgate_map.get(str(c.id), 0),
+        )
+        for c in campanhas
+    ]
 
     if status_filter:
         results = [r for r in results if r.status == status_filter]
@@ -732,7 +755,49 @@ def get_campanha(campanha_id: str, db: Session = Depends(get_db)):
     if not campanha:
         raise HTTPException(status_code=404, detail="Campanha não encontrada.")
 
-    return _campanha_to_schema(campanha)
+    total_notificados = int(db.scalar(
+        select(sql_func.sum(NotificacaoCampanha.total_enviados))
+        .where(NotificacaoCampanha.id_campanha == uid)
+    ) or 0)
+
+    total_resgates = int(db.scalar(
+        select(sql_func.count(Resgate.id))
+        .where(Resgate.id_campanha == uid)
+    ) or 0)
+
+    return _campanha_to_schema(campanha, total_notificados=total_notificados, total_resgates=total_resgates)
+
+
+@app.get("/api/campanhas/{campanha_id}/resgates", response_model=list[ResgateDetalhe])
+def get_resgates_campanha(
+    campanha_id: str,
+    current_user: User = Depends(get_current_user),
+    db: Session = Depends(get_db),
+):
+    """Lista os resgates de uma campanha com nome do cliente (admin only)."""
+    if not current_user.is_admin:
+        raise HTTPException(status_code=403, detail="Acesso restrito a administradores.")
+
+    try:
+        uid = uuid_module.UUID(campanha_id)
+    except ValueError:
+        raise HTTPException(status_code=400, detail="ID inválido.")
+
+    resgates = db.scalars(
+        select(Resgate)
+        .where(Resgate.id_campanha == uid)
+        .order_by(Resgate.resgatado_em.desc())
+    ).all()
+
+    result = []
+    for r in resgates:
+        user = db.scalar(select(User).where(User.id == r.id_usuario))
+        result.append(ResgateDetalhe(
+            id=str(r.id),
+            usuario_nome=user.name if user else "Usuário removido",
+            resgatado_em=r.resgatado_em.isoformat(),
+        ))
+    return result
 
 
 @app.post("/api/campanhas/{campanha_id}/resgatar", response_model=ResgateResponse, status_code=status.HTTP_201_CREATED)
