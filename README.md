@@ -24,7 +24,7 @@ Com essa solucao, a Crio Cafe pode tornar suas acoes promocionais mais inteligen
 ### 1. Subir os serviços
 
 ```bash
-docker compose up -d
+sudo docker compose up -d
 ```
 
 Isso sobe três containers:
